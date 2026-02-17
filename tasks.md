@@ -24,10 +24,10 @@ You are an AI coding agent. This file is your single source of truth for buildin
 
 - [x] **1.0.1** Initialize a Next.js project with App Router, TypeScript, and Tailwind. Confirm it builds and runs locally.
 - [x] **1.0.2** Set up the folder structure: `/app`, `/app/api`, `/lib`, `/components`, `/types`. Add placeholder `index.ts` or `page.tsx` files where needed so the structure is navigable.
-- [ ] **1.0.3** Create a Vercel project and confirm deployment from the main branch succeeds (even if it's just the default Next.js page).
-- [ ] **1.0.4** Create a Supabase project. Enable the `pgvector` extension (`CREATE EXTENSION IF NOT EXISTS vector;`). Confirm connection from a local `.env.local` using `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
-- [ ] **1.0.5** Configure Supabase Auth with Google SSO. Restrict sign-in to allowed internal email addresses (use an allowlist check, not open registration). Create a minimal `/app/login/page.tsx` that redirects to Dashboard on success.
-- [ ] **1.0.6** Create the following database tables via Supabase SQL editor or migration file. Use exact column names so all later references are consistent:
+- [x] **1.0.3** Create a Vercel project and confirm deployment from the main branch succeeds (even if it's just the default Next.js page).
+- [x] **1.0.4** Create a Supabase project. Enable the `pgvector` extension (`CREATE EXTENSION IF NOT EXISTS vector;`). Confirm connection from a local `.env.local` using `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+- [x] **1.0.5** Configure Supabase Auth with Google SSO. Restrict sign-in to allowed internal email addresses (use an allowlist check, not open registration). Create a minimal `/app/login/page.tsx` that redirects to Dashboard on success.
+- [x] **1.0.6** Create the following database tables via Supabase SQL editor or migration file. Use exact column names so all later references are consistent:
 
 **`pdf_documents`**
 | Column | Type | Notes |
@@ -80,9 +80,9 @@ You are an AI coding agent. This file is your single source of truth for buildin
 | status | text, default 'pending' | 'pending', 'approved', 'escalated' |
 | created_at | timestamptz, default now() | |
 
-- [ ] **1.0.7** Create `/lib/supabase.ts` exporting a server-side Supabase client (using service role key) and a client-side Supabase client (using anon key). Both should be typed.
-- [ ] **1.0.8** Create `/types/index.ts` with TypeScript interfaces for `PdfDocument`, `ContentChunk`, `StructuredFact`, `EmailQuery` matching the table schemas above.
-- [ ] **1.0.9** Create `/lib/claude.ts` with two stub functions. These will be implemented in the next tasks but should have correct signatures now:
+- [x] **1.0.7** Create `/lib/supabase.ts` exporting a server-side Supabase client (using service role key) and a client-side Supabase client (using anon key). Both should be typed.
+- [x] **1.0.8** Create `/types/index.ts` with TypeScript interfaces for `PdfDocument`, `ContentChunk`, `StructuredFact`, `EmailQuery` matching the table schemas above.
+- [x] **1.0.9** Create `/lib/claude.ts` with two stub functions. These will be implemented in the next tasks but should have correct signatures now:
   - `generateEmbedding(text: string): Promise<number[]>`
   - `generateResponse(params: { rawEmail: string; topChunks: ContentChunk[]; structuredFacts: StructuredFact[]; conflictFlag: boolean }): Promise<{ internalSummary: string; suggestedReply: string; confidence: string; conflicts: string[] }>`
 
@@ -92,13 +92,13 @@ You are an AI coding agent. This file is your single source of truth for buildin
 
 ### 1.1 PDF Ingestion Pipeline (Days 2–3)
 
-- [ ] **1.1.1** Install `pdf-parse` (npm package). Create `/lib/pdf.ts` with a function `extractTextFromPdf(buffer: Buffer): Promise<{ pages: { pageNumber: number; text: string }[] }>` that returns page-segmented text.
-- [ ] **1.1.2** Create the chunking function in `/lib/chunking.ts`:
+- [x] **1.1.1** Install `pdf-parse` (npm package). Create `/lib/pdf.ts` with a function `extractTextFromPdf(buffer: Buffer): Promise<{ pages: { pageNumber: number; text: string }[] }>` that returns page-segmented text.
+- [x] **1.1.2** Create the chunking function in `/lib/chunking.ts`:
   - Input: array of `{ pageNumber, text }`.
   - Output: array of `{ pageNumber, sectionHeading: string | null, text: string }`.
   - Target chunk size: 400–800 tokens. Use a simple whitespace/sentence-boundary splitter. Preserve page number. If a line looks like a heading (e.g. all caps, short line before a paragraph), capture it as `sectionHeading`.
-- [ ] **1.1.3** Implement `generateEmbedding` in `/lib/claude.ts`. Call the Claude embeddings endpoint. Confirm the vector dimension returned and update the `content_chunks.embedding` column dimension if needed.
-- [ ] **1.1.4** Create API route `/app/api/ingest/route.ts` (POST):
+- [x] **1.1.3** Implement `generateEmbedding` in `/lib/claude.ts`. Using Voyage AI (voyage-3 model) instead of Claude (no Anthropic embeddings API). Confirmed vector dimension is 1024, matching the `content_chunks.embedding` column.
+- [x] **1.1.4** Create API route `/app/api/ingest/route.ts` (POST):
   - Accepts multipart form data: PDF file, `version` (string), `priorityLabel` (string, optional).
   - Extracts text → chunks → generates embeddings → inserts a row into `pdf_documents` → inserts rows into `content_chunks` with embeddings.
   - Returns `{ success: true, documentId, chunkCount }`.
