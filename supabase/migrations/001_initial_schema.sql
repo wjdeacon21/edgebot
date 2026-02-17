@@ -5,8 +5,6 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE TABLE pdf_documents (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
-  version text,
-  priority_label text,
   uploaded_at timestamptz DEFAULT now(),
   status text DEFAULT 'active'
 );

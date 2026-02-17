@@ -1,8 +1,6 @@
 export interface PdfDocument {
   id: string;
   name: string;
-  version: string | null;
-  priority_label: string | null;
   uploaded_at: string;
   status: "active" | "deprecated";
 }
@@ -34,7 +32,6 @@ export interface StructuredFact {
 export interface EmailQuery {
   id: string;
   raw_email: string;
-  internal_summary: string | null;
   suggested_reply: string | null;
   confidence_score: "high" | "medium" | "low" | null;
   conflict_flag: boolean;
