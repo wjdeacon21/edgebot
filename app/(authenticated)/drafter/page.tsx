@@ -92,13 +92,9 @@ export default function DrafterPage() {
     });
 
     if (res.ok) {
-      setActionFeedback("Escalated for review.");
-      setTimeout(() => {
-        setRawEmail("");
-        setResult(null);
-        setEditedReply("");
-        setActionFeedback(null);
-      }, 2000);
+      setRawEmail("");
+      setResult(null);
+      setEditedReply("");
     }
   }
 
