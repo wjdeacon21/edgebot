@@ -170,7 +170,7 @@ export default function DrafterPage() {
                 onChange={(e) => setRawEmail(e.target.value)}
                 onFocus={() => setInputFocused(true)}
                 onBlur={() => setInputFocused(false)}
-                placeholder="Paste a participant email or question..."
+                placeholder="E.g., 'What time is check-in...'"
                 className="h-full min-h-[400px] w-full resize-none rounded-2xl border-0 bg-transparent px-5 py-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none"
               />
             </div>
