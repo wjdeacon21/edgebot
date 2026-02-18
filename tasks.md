@@ -103,19 +103,19 @@ You are an AI coding agent. This file is your single source of truth for buildin
   - Extracts text → chunks → generates embeddings → inserts a row into `pdf_documents` → inserts rows into `content_chunks` with embeddings.
   - Returns `{ success: true, documentId, chunkCount }`.
   - Wrap in try/catch; return descriptive errors.
-- [ ] **1.1.5** Build a minimal admin upload page at `/app/sources/page.tsx`:
+- [x] **1.1.5** Build a minimal admin upload page at `/app/sources/page.tsx`:
   - File picker for PDF.
   - Text inputs for version and priority label.
   - Upload button that POSTs to `/api/ingest`.
   - Show success/error feedback.
   - Below the upload form, list all rows from `pdf_documents` showing name, version, priority_label, uploaded_at, status. No edit/delete actions yet.
-- [ ] **1.1.6** Build the Structured Facts UI at `/app/structured-facts/page.tsx`:
+- [x] **1.1.6** Build the Structured Facts UI at `/app/structured-facts/page.tsx`:
   - Table view of all structured facts with columns: category, key, value, source_document, page_number, confidence, last_verified, status.
   - "Add New Fact" form (modal or inline): category (dropdown with predefined categories: Arrival & Departure, Ticket inclusions, Accommodation, Refund policy, WiFi & coworking, Programming structure, Attendance flexibility, Other), key, value, source_document (text), page_number, confidence dropdown (high/medium/low).
   - Edit button per row (inline edit or modal).
   - Deprecate button per row (sets status to 'deprecated'; does not delete).
   - Filter by category dropdown.
-- [ ] **1.1.7** Test: Upload a real PDF. Verify rows appear in `pdf_documents` and `content_chunks`. Verify embeddings are non-null vectors of expected dimension. Manually add 5+ structured facts.
+- [x] **1.1.7** Test: Upload a real PDF. Verify rows appear in `pdf_documents` and `content_chunks`. Verify embeddings are non-null vectors of expected dimension. Manually add 5+ structured facts.
 
 **Checkpoint:** You can upload PDFs, see them listed, chunks are embedded and stored, and you can manually manage structured facts.
 
@@ -123,19 +123,19 @@ You are an AI coding agent. This file is your single source of truth for buildin
 
 ### 1.2 Retrieval Layer (Day 4)
 
-- [ ] **1.2.1** Create a Supabase RPC function (SQL) called `match_chunks`:
+- [x] **1.2.1** Create a Supabase RPC function (SQL) called `match_chunks`:
   - Input: `query_embedding vector, match_count int, match_threshold float`.
   - Returns: top N `content_chunks` rows ordered by cosine similarity (`1 - (embedding <=> query_embedding)`), including `source_id`, `source_type`, `page_number`, `section_heading`, `text`, and similarity score.
   - Filter out chunks from deprecated documents (join to `pdf_documents` where `status = 'active'`).
-- [ ] **1.2.2** Create `/lib/retrieval.ts` with function `retrieveRelevantChunks(queryText: string, topK?: number): Promise<ContentChunk[]>`:
+- [x] **1.2.2** Create `/lib/retrieval.ts` with function `retrieveRelevantChunks(queryText: string, topK?: number): Promise<ContentChunk[]>`:
   - Embed the query text using `generateEmbedding`.
   - Call the `match_chunks` RPC with topK (default 5).
   - Return results.
-- [ ] **1.2.3** Create `/lib/retrieval.ts` function `retrieveStructuredFacts(queryText: string): Promise<StructuredFact[]>`:
+- [x] **1.2.3** Create `/lib/retrieval.ts` function `retrieveStructuredFacts(queryText: string): Promise<StructuredFact[]>`:
   - Approach 1 (simple, do this first): keyword match — extract nouns/keywords from query, query `structured_facts` where `category` or `key` ilike any keyword, status = 'active'.
   - Approach 2 (stretch): Use Claude to infer the category from the email, then query by category.
   - Return matching facts.
-- [ ] **1.2.4** Test: Write a short test script or API route that takes a query string, calls both retrieval functions, and logs the results. Verify chunks are relevant and structured facts match.
+- [x] **1.2.4** Test: Write a short test script or API route that takes a query string, calls both retrieval functions, and logs the results. Verify chunks are relevant and structured facts match.
 
 **Checkpoint:** Given an email-like query, the system returns relevant chunks and structured facts.
 
@@ -143,14 +143,14 @@ You are an AI coding agent. This file is your single source of truth for buildin
 
 ### 1.3 Conflict Detection Engine (Day 5)
 
-- [ ] **1.3.1** Create `/lib/conflicts.ts` with function `detectConflicts(chunks: ContentChunk[], facts: StructuredFact[]): Promise<{ conflictFlag: boolean; conflicts: string[]; confidence: 'high' | 'medium' | 'low' }>`:
+- [x] **1.3.1** Create `/lib/conflicts.ts` with function `detectConflicts(chunks: ContentChunk[], facts: StructuredFact[]): Promise<{ conflictFlag: boolean; conflicts: string[]; confidence: 'high' | 'medium' | 'low' }>`:
   - Send the retrieved chunks and facts to Claude with a focused prompt: "You are a conflict detection system. Given these text chunks and structured facts, identify any contradictions in factual claims (dates, prices, policies, locations, etc.). Return a JSON object: `{ conflicts: string[], hasConflict: boolean }`. Each conflict string should name both sources and what they disagree about."
   - Determine confidence:
     - **High**: Structured fact match exists, no contradictions.
     - **Medium**: Vector-only answer (no structured fact), or minor variation.
     - **Low**: Conflicting values found, or no structured fact.
   - Return the result.
-- [ ] **1.3.2** Test: Manually create two chunks with conflicting information (e.g., different check-in times). Run `detectConflicts`. Verify the conflict is flagged and described.
+- [x] **1.3.2** Test: Manually create two chunks with conflicting information (e.g., different check-in times). Run `detectConflicts`. Verify the conflict is flagged and described.
 
 **Checkpoint:** The system detects and describes contradictions across retrieved content.
 
@@ -158,7 +158,7 @@ You are an AI coding agent. This file is your single source of truth for buildin
 
 ### 1.4 Claude Response Engine (Day 6)
 
-- [ ] **1.4.1** Implement `generateResponse` in `/lib/claude.ts`:
+- [x] **1.4.1** Implement `generateResponse` in `/lib/claude.ts`:
   - Build a system prompt that enforces these rules: accuracy over speed, never fabricate, cite sources (document name + page), flag inconsistencies, if unsure say so clearly.
   - User message includes: raw email, retrieved chunks (with source metadata), structured facts, conflict flag and descriptions.
   - Instruct Claude to return a structured response in this format:
@@ -175,12 +175,12 @@ You are an AI coding agent. This file is your single source of truth for buildin
     [Clarifying questions, or "N/A"]
     ```
   - Parse Claude's response into the typed return object: `{ internalSummary, suggestedReply, confidence, conflicts }`.
-- [ ] **1.4.2** Create API route `/app/api/generate/route.ts` (POST):
+- [x] **1.4.2** Create API route `/app/api/generate/route.ts` (POST):
   - Input: `{ rawEmail: string }`.
   - Pipeline: embed query → retrieve chunks → retrieve structured facts → detect conflicts → generate response.
   - Save the full result to `email_queries` with status 'pending'.
   - Return the full result plus the `email_queries.id`.
-- [ ] **1.4.3** Test: POST a realistic participant email to `/api/generate`. Verify the response includes a summary, suggested reply, confidence score, and citations. Verify it's saved to `email_queries`.
+- [x] **1.4.3** Test: POST a realistic participant email to `/api/generate`. Verify the response includes a summary, suggested reply, confidence score, and citations. Verify it's saved to `email_queries`.
 
 **Checkpoint:** End-to-end pipeline works — email in, verified draft out, logged in database.
 
@@ -188,8 +188,8 @@ You are an AI coding agent. This file is your single source of truth for buildin
 
 ### 1.5 Email Review Dashboard (Day 7)
 
-- [ ] **1.5.1** Create the main layout shell. All authenticated pages should share a sidebar/nav with links to: Dashboard, Email Review, Sources, Structured Facts, Logs, Admin. Highlight the active page. Keep nav minimal — icon + label, no nested menus.
-- [ ] **1.5.2** Build `/app/email-review/page.tsx` — the primary workspace:
+- [x] **1.5.1** Create the main layout shell. All authenticated pages should share a sidebar/nav with links to: Dashboard, Email Review, Sources, Structured Facts, Logs, Admin. Highlight the active page. Keep nav minimal — icon + label, no nested menus.
+- [x] **1.5.2** Build `/app/email-review/page.tsx` — the primary workspace:
   - **Left panel:**
     - Text area: "Paste participant email here".
     - "Generate Response" button. Show a loading spinner while the API call is in flight.
@@ -204,20 +204,20 @@ You are an AI coding agent. This file is your single source of truth for buildin
       - **Escalate**: PATCH with `{ status: 'escalated' }`.
       - **Regenerate**: re-call `/api/generate` with the same email.
   - After Approve or Escalate, show a brief confirmation and reset the form.
-- [ ] **1.5.3** Create API route `/app/api/email-queries/[id]/route.ts` (PATCH):
+- [x] **1.5.3** Create API route `/app/api/email-queries/[id]/route.ts` (PATCH):
   - Accepts `{ status, approved_version, approved_by }`.
   - Updates the `email_queries` row.
   - Returns updated row.
-- [ ] **1.5.4** Build `/app/dashboard/page.tsx`:
+- [x] **1.5.4** Build `/app/dashboard/page.tsx`:
   - Display cards/stats: total PDFs ingested (count of `pdf_documents` where status=active), total structured facts (count), total queries processed (count of `email_queries`), recent queries (last 5, showing snippet of raw_email + confidence + status), conflict rate last 7 days (count of email_queries with conflict_flag=true / total in last 7 days).
   - No interactivity needed — read-only overview.
-- [ ] **1.5.5** Build `/app/logs/page.tsx`:
+- [x] **1.5.5** Build `/app/logs/page.tsx`:
   - Table of all `email_queries` rows, newest first.
   - Columns: timestamp, email snippet (first 80 chars), confidence, conflict flag, status, approved_by.
   - Click a row to expand and see full raw_email, internal_summary, suggested_reply, approved_version, sources_used.
   - Filters: by confidence (dropdown), by conflict flag (toggle), by status (dropdown), by date range (two date pickers).
-- [ ] **1.5.6** Test the full Journey 1 flow: paste a real email → Generate → review summary and confidence → edit suggested reply → Approve. Verify the log entry appears in Logs and Dashboard stats update.
-- [ ] **1.5.7** Test Journey 2 flow: use an email that triggers a known conflict → verify conflict flag appears → review both sources → Escalate.
+- [x] **1.5.6** Test the full Journey 1 flow: paste a real email → Generate → review summary and confidence → edit suggested reply → Approve. Verify the log entry appears in Logs and Dashboard stats update.
+- [x] **1.5.7** Test Journey 2 flow: use an email that triggers a known conflict → verify conflict flag appears → review both sources → Escalate.
 
 **Checkpoint:** The complete MVP loop works — email in, draft generated, human reviews, approves, logged. All 7 pages exist and are navigable.
 
