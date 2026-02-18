@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase-browser";
 interface GenerateResult {
   id: string;
   suggestedReply: string;
+  subjectLine: string;
   confidence: string;
   conflictFlag: boolean;
   conflicts: string[];
@@ -24,6 +25,7 @@ export default function DrafterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
+  const [gmailLoading, setGmailLoading] = useState(false);
 
   async function handleGenerate() {
     if (!rawEmail.trim() || loading) return;
@@ -100,17 +102,48 @@ export default function DrafterPage() {
     }
   }
 
+  async function handleOpenInGmail() {
+    if (!editedReply.trim() || gmailLoading) return;
+
+    setGmailLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/gmail/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: editedReply, subject: result?.subjectLine }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to create Gmail draft");
+        return;
+      }
+
+      window.open(
+        `https://mail.google.com/mail/#drafts`,
+        "_blank"
+      );
+    } catch {
+      setError("Failed to connect to Gmail. Please try again.");
+    } finally {
+      setGmailLoading(false);
+    }
+  }
+
   // Right pill styling based on state
   const canGenerate = rawEmail.trim() && !loading && !result;
   const rightPillClass = (() => {
     if (loading) {
-      return "bg-purple-600 text-white opacity-75 cursor-wait";
+      return "bg-[#241792] text-white opacity-75 cursor-wait";
     }
     if (result) {
       return "bg-white border border-gray-200 text-gray-700 cursor-default";
     }
     if (rawEmail.trim()) {
-      return "bg-purple-600 text-white hover:bg-purple-700 cursor-pointer shadow-md shadow-purple-200";
+      return "bg-[#241792] text-white hover:bg-[#1b1170] cursor-pointer shadow-md shadow-[#241792]/20";
     }
     return "bg-white border border-gray-200 text-gray-400 cursor-default";
   })();
@@ -131,7 +164,7 @@ export default function DrafterPage() {
       <div className="mt-6 grid flex-1 grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Left Column — Input */}
         <div className={`flex flex-col gap-4 transition-all duration-500 ${leftPanelDimmed ? "opacity-50 grayscale" : ""}`}>
-          <div className={`rounded-full px-6 py-3 text-center text-base font-bold transition-colors ${leftPanelDimmed ? "border border-gray-200 bg-white text-gray-400" : "bg-purple-600 text-white"}`}>
+          <div className={`rounded-full px-6 py-3 text-center text-base font-bold transition-colors ${leftPanelDimmed ? "border border-gray-200 bg-white text-gray-400" : "bg-[#241792] text-white"}`}>
             Bring in an email or question below
           </div>
           <div className={`flex-1 rounded-2xl p-[2px] ${showInputShimmer ? "purple-shimmer" : "bg-gray-200"}`}>
@@ -237,6 +270,13 @@ export default function DrafterPage() {
                     className="flex-1 rounded-full py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
                   >
                     Try again
+                  </button>
+                  <button
+                    onClick={handleOpenInGmail}
+                    disabled={gmailLoading}
+                    className="flex-1 rounded-full py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+                  >
+                    {gmailLoading ? "Sending..." : "Open in Gmail"}
                   </button>
                 </div>
               </div>

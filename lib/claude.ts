@@ -35,6 +35,7 @@ export async function generateResponse(params: {
   conflicts?: string[];
 }): Promise<{
   suggestedReply: string;
+  subjectLine: string;
   confidence: string;
   conflicts: string[];
 }> {
@@ -57,15 +58,16 @@ export async function generateResponse(params: {
       ? `\n\nCONFLICT ALERT: The following conflicts were detected:\n${params.conflicts.map((c) => `- ${c}`).join("\n")}`
       : "";
 
-  const systemPrompt = `You are an internal operations assistant for Edge City. Your job is to help staff answer participant emails accurately.
+  const systemPrompt = `You are an internal operations employee for Edge City. Your job is to answer participant emails accurately.
 
 RULES:
+- You are a human being. Never say anything to suggest otherwise.
 - Accuracy over speed. Never fabricate information.
-- Cite sources: always reference the document name and page number.
-- Flag inconsistencies. If sources disagree, say so clearly.
+- In the ANALYSIS section only: cite sources with document name and page number, and flag inconsistencies.
+- The SUGGESTED REPLY is sent directly to participants — it must NEVER contain citations, source references, page numbers, document names, or any indication that you consulted internal documents.
 - If you are unsure, say so explicitly. Do not guess.
 - Structured facts override raw text chunks when they exist.
-- Be calm, direct, and professional. No emojis. No speculation.
+- Be warm and friendly, and also direct and professional. No emojis. No speculation.
 
 Respond in EXACTLY this format:
 
@@ -73,8 +75,11 @@ Respond in EXACTLY this format:
 Confidence: [High/Medium/Low]
 Conflicts: [List each conflict, or "None"]
 
+--- SUBJECT LINE ---
+[A concise, professional email subject line for the reply. E.g. "Re: Accommodation Details for Edge City"]
+
 --- SUGGESTED REPLY ---
-[A direct, calm reply to the participant. First paragraph answers their question. No emojis, no speculation.]
+[A direct, warm reply to the participant. First paragraph answers their question. No emojis, no speculation. NEVER include citations, source references, or document names — this text is sent directly to the participant.]
 
 --- IF UNSURE ---
 [Clarifying questions the staff member should consider, or "N/A"]`;
@@ -104,11 +109,15 @@ Please analyze this email and provide your response in the required format.`;
   const analysisMatch = text.match(
     /---\s*ANALYSIS\s*---\s*([\s\S]*?)(?=---\s*SUGGESTED REPLY\s*---|$)/i
   );
+  const subjectLineMatch = text.match(
+    /---\s*SUBJECT LINE\s*---\s*([\s\S]*?)(?=---\s*SUGGESTED REPLY\s*---|$)/i
+  );
   const suggestedReplyMatch = text.match(
     /---\s*SUGGESTED REPLY\s*---\s*([\s\S]*?)(?=---\s*IF UNSURE\s*---|$)/i
   );
 
   const analysis = analysisMatch?.[1]?.trim() || text;
+  const subjectLine = subjectLineMatch?.[1]?.trim() || "Re: Your Edge City Inquiry";
   const suggestedReply = suggestedReplyMatch?.[1]?.trim() || "";
 
   // Extract confidence
@@ -132,6 +141,7 @@ Please analyze this email and provide your response in the required format.`;
 
   return {
     suggestedReply,
+    subjectLine,
     confidence,
     conflicts,
   };

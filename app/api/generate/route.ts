@@ -63,6 +63,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       id: emailQuery?.id || null,
       suggestedReply: response.suggestedReply,
+      subjectLine: response.subjectLine,
       confidence: response.confidence,
       conflictFlag: conflictResult.conflictFlag,
       conflicts: response.conflicts,
