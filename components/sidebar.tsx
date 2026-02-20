@@ -47,7 +47,10 @@ export function Sidebar() {
         } lg:translate-x-0`}
       >
         <div className="flex items-center justify-between px-5 py-5">
-          <h1 className="text-base font-semibold text-gray-900">Edge City Ops</h1>
+          <div>
+            <h1 className="text-base font-semibold text-[#0e103a] font-machina">Ops Dashboard</h1>
+            <p className="text-xs text-gray-500">Edge Patagonia</p>
+          </div>
           <button
             onClick={() => setOpen(false)}
             className="rounded-md p-1 text-gray-400 hover:text-gray-600 lg:hidden cursor-pointer"
@@ -70,8 +73,8 @@ export function Sidebar() {
                   onClick={() => setOpen(false)}
                   className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm mb-0.5 ${
                     isActive
-                      ? "bg-gray-100 text-gray-900 font-medium"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      ? "bg-gray-100 text-[#0e103a] font-medium"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-[#0e103a]"
                   }`}
                 >
                   <span className="text-base w-5 text-center">{item.icon}</span>

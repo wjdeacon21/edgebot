@@ -78,7 +78,7 @@ export default function SourcesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-2xl font-semibold text-gray-900">Sources</h1>
+      <h1 className="text-2xl font-semibold text-[#0e103a]">Sources</h1>
       <p className="mt-1 text-sm text-gray-500">Upload and manage PDF documents</p>
 
       {/* Upload Form (admin only) */}
@@ -100,7 +100,7 @@ export default function SourcesPage() {
             <button
               onClick={handleUpload}
               disabled={!file || uploading}
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="rounded-md bg-[#0e103a] px-4 py-2 text-sm font-medium text-white hover:bg-[#0e103a]/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {uploading ? "Uploading..." : "Upload"}
             </button>
@@ -142,7 +142,7 @@ export default function SourcesPage() {
               <tbody>
                 {documents.map((doc) => (
                   <tr key={doc.id} className="border-b border-gray-100">
-                    <td className="py-3 pr-6 text-gray-900">{doc.name}</td>
+                    <td className="py-3 pr-6 text-[#0e103a]">{doc.name}</td>
                     <td className="py-3 pr-6 text-gray-600">
                       {new Date(doc.uploaded_at).toLocaleDateString()}
                     </td>

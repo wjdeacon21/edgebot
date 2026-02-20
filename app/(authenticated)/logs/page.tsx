@@ -66,7 +66,7 @@ export default function LogsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-2xl font-semibold text-gray-900">Logs</h1>
+      <h1 className="text-2xl font-semibold text-[#0e103a]">Logs</h1>
       <p className="mt-1 text-sm text-gray-500">Query history and audit trail</p>
 
       {/* Filters */}
@@ -76,7 +76,7 @@ export default function LogsPage() {
           <select
             value={confidenceFilter}
             onChange={(e) => setConfidenceFilter(e.target.value)}
-            className="mt-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-gray-500 focus:outline-none"
+            className="mt-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-[#0e103a] focus:border-gray-500 focus:outline-none"
           >
             <option value="">All</option>
             <option value="high">High</option>
@@ -89,7 +89,7 @@ export default function LogsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="mt-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-gray-500 focus:outline-none"
+            className="mt-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-[#0e103a] focus:border-gray-500 focus:outline-none"
           >
             <option value="">All</option>
             <option value="pending">Pending</option>
@@ -115,7 +115,7 @@ export default function LogsPage() {
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="mt-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-gray-500 focus:outline-none"
+            className="mt-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-[#0e103a] focus:border-gray-500 focus:outline-none"
           />
         </div>
         <div>
@@ -124,7 +124,7 @@ export default function LogsPage() {
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="mt-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-gray-500 focus:outline-none"
+            className="mt-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-[#0e103a] focus:border-gray-500 focus:outline-none"
           />
         </div>
       </div>
@@ -159,7 +159,7 @@ export default function LogsPage() {
                     <td className="py-3 pr-4 text-gray-600 whitespace-nowrap">
                       {new Date(q.created_at).toLocaleString()}
                     </td>
-                    <td className="py-3 pr-4 text-gray-900 max-w-xs truncate">
+                    <td className="py-3 pr-4 text-[#0e103a] max-w-xs truncate">
                       {q.raw_email.slice(0, 80)}
                       {q.raw_email.length > 80 ? "..." : ""}
                     </td>

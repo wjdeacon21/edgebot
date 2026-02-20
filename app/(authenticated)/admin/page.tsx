@@ -87,7 +87,7 @@ export default function AdminPage() {
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Access Denied</h1>
+        <h1 className="text-2xl font-semibold text-[#0e103a]">Access Denied</h1>
         <p className="mt-2 text-sm text-gray-500">
           You do not have permission to view this page.
         </p>
@@ -97,7 +97,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-2xl font-semibold text-gray-900">Admin</h1>
+      <h1 className="text-2xl font-semibold text-[#0e103a]">Admin</h1>
       <p className="mt-1 text-sm text-gray-500">User management and system health</p>
 
       {loading ? (
@@ -111,25 +111,25 @@ export default function AdminPage() {
               <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <div className="rounded-md border border-gray-200 bg-white p-5">
                   <p className="text-sm text-gray-500">Active Documents</p>
-                  <p className="mt-1 text-2xl font-semibold text-gray-900">
+                  <p className="mt-1 text-2xl font-semibold text-[#0e103a]">
                     {health.activeDocs}
                   </p>
                 </div>
                 <div className="rounded-md border border-gray-200 bg-white p-5">
                   <p className="text-sm text-gray-500">Active Facts</p>
-                  <p className="mt-1 text-2xl font-semibold text-gray-900">
+                  <p className="mt-1 text-2xl font-semibold text-[#0e103a]">
                     {health.activeFacts}
                   </p>
                 </div>
                 <div className="rounded-md border border-gray-200 bg-white p-5">
                   <p className="text-sm text-gray-500">Total Chunks</p>
-                  <p className="mt-1 text-2xl font-semibold text-gray-900">
+                  <p className="mt-1 text-2xl font-semibold text-[#0e103a]">
                     {health.totalChunks}
                   </p>
                 </div>
                 <div className="rounded-md border border-gray-200 bg-white p-5">
                   <p className="text-sm text-gray-500">Embeddings</p>
-                  <p className="mt-1 text-2xl font-semibold text-gray-900">
+                  <p className="mt-1 text-2xl font-semibold text-[#0e103a]">
                     {health.totalEmbeddings}
                   </p>
                 </div>
@@ -146,7 +146,7 @@ export default function AdminPage() {
             <button
               onClick={handleReembed}
               disabled={reembedding}
-              className="mt-3 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="mt-3 rounded-md bg-[#0e103a] px-4 py-2 text-sm font-medium text-white hover:bg-[#0e103a]/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {reembedding ? "Re-embedding..." : "Re-embed All Chunks"}
             </button>
@@ -173,14 +173,14 @@ export default function AdminPage() {
                   <tbody>
                     {users.map((u) => (
                       <tr key={u.id} className="border-b border-gray-100">
-                        <td className="py-3 pr-6 text-gray-900">{u.email}</td>
+                        <td className="py-3 pr-6 text-[#0e103a]">{u.email}</td>
                         <td className="py-3 pr-6">
                           <select
                             value={u.role}
                             onChange={(e) =>
                               handleRoleChange(u.id, e.target.value)
                             }
-                            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-gray-500 focus:outline-none"
+                            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-[#0e103a] focus:border-gray-500 focus:outline-none"
                           >
                             <option value="admin">Admin</option>
                             <option value="ops_reviewer">Ops Reviewer</option>

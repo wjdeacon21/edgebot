@@ -1,8 +1,16 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "PPNeueMachina";
+  src: url("/fonts/PPNeueMachina-InktrapUltrabold.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0e103a;
 }
 
 @theme inline {
@@ -10,6 +18,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-machina: "PPNeueMachina", sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,7 +31,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), sans-serif;
 }
 
 @keyframes shimmer {
@@ -37,11 +46,11 @@ body {
 .purple-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(36, 23, 146, 0.4) 0%,
-    rgba(36, 23, 146, 0.7) 25%,
-    rgba(66, 50, 180, 0.9) 50%,
-    rgba(36, 23, 146, 0.7) 75%,
-    rgba(36, 23, 146, 0.4) 100%
+    rgba(14, 16, 58, 0.4) 0%,
+    rgba(14, 16, 58, 0.7) 25%,
+    rgba(14, 16, 58, 0.9) 50%,
+    rgba(14, 16, 58, 0.7) 75%,
+    rgba(14, 16, 58, 0.4) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 3s ease-in-out infinite;

@@ -33,9 +33,10 @@ function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-sm w-full space-y-6 p-8">
         <div className="text-center">
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Edge City Ops
+          <h1 className="text-2xl font-semibold text-[#0e103a]">
+            Ops Dashboard
           </h1>
+          <p className="mt-1 text-sm text-gray-500">Edge Patagonia</p>
           <p className="mt-2 text-sm text-gray-500">
             Sign in to access the dashboard
           </p>

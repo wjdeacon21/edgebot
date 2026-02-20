@@ -133,13 +133,13 @@ export default function DrafterPage() {
   const canGenerate = rawEmail.trim() && !loading && !result;
   const rightPillClass = (() => {
     if (loading) {
-      return "bg-[#241792] text-white opacity-75 cursor-wait";
+      return "bg-[#0e103a] text-white opacity-75 cursor-wait";
     }
     if (result) {
       return "bg-white border border-gray-200 text-gray-700 cursor-default";
     }
     if (rawEmail.trim()) {
-      return "bg-[#241792] text-white hover:bg-[#1b1170] cursor-pointer shadow-md shadow-[#241792]/20";
+      return "bg-[#0e103a] text-white hover:bg-[#0a0c2e] cursor-pointer shadow-md shadow-[#0e103a]/20";
     }
     return "bg-white border border-gray-200 text-gray-400 cursor-default";
   })();
@@ -152,7 +152,7 @@ export default function DrafterPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 p-4 pt-14 lg:p-8">
-      <h1 className="text-2xl font-semibold text-gray-900">Drafter</h1>
+      <h1 className="text-2xl font-semibold text-[#0e103a] font-machina">Drafter</h1>
       <p className="mt-1 text-sm text-gray-500">
         Respond to FAQs from Edge Participants
       </p>
@@ -160,7 +160,7 @@ export default function DrafterPage() {
       <div className="mt-6 grid flex-1 grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Left Column — Input */}
         <div className={`flex flex-col gap-4 transition-all duration-500 ${leftPanelDimmed ? "opacity-50 grayscale" : ""}`}>
-          <div className={`rounded-full px-6 py-3 text-center text-base font-bold transition-colors ${leftPanelDimmed ? "border border-gray-200 bg-white text-gray-400" : "bg-[#241792] text-white"}`}>
+          <div className={`rounded-full px-6 py-3 text-center text-base font-bold transition-colors font-machina ${leftPanelDimmed ? "border border-gray-200 bg-white text-gray-400" : "bg-[#0e103a] text-white"}`}>
             Bring in an email or question below
           </div>
           <div className={`flex-1 rounded-2xl p-[2px] ${showInputShimmer ? "purple-shimmer" : "bg-gray-200"}`}>
@@ -170,8 +170,8 @@ export default function DrafterPage() {
                 onChange={(e) => setRawEmail(e.target.value)}
                 onFocus={() => setInputFocused(true)}
                 onBlur={() => setInputFocused(false)}
-                placeholder="E.g., 'What time is check-in...'"
-                className="h-full min-h-[400px] w-full resize-none rounded-2xl border-0 bg-transparent px-5 py-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none"
+                placeholder="What time should I check in..."
+                className="h-full min-h-[400px] w-full resize-none rounded-2xl border-0 bg-transparent px-5 py-4 text-sm text-[#0e103a] placeholder-gray-400 focus:outline-none"
               />
             </div>
           </div>
@@ -186,7 +186,7 @@ export default function DrafterPage() {
         <div className="flex flex-col gap-4">
           <button
             onClick={canGenerate ? handleGenerate : undefined}
-            className={`w-full rounded-full px-6 py-3 text-center text-base font-bold transition-colors ${rightPillClass}`}
+            className={`w-full rounded-full px-6 py-3 text-center text-base font-bold transition-colors font-machina ${rightPillClass}`}
           >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -244,7 +244,7 @@ export default function DrafterPage() {
               <textarea
                 value={editedReply}
                 onChange={(e) => setEditedReply(e.target.value)}
-                className="h-full min-h-[400px] w-full resize-none rounded-2xl border-0 bg-transparent px-5 py-4 text-sm text-gray-900 focus:outline-none"
+                className="h-full min-h-[400px] w-full resize-none rounded-2xl border-0 bg-transparent px-5 py-4 text-sm text-[#0e103a] focus:outline-none"
               />
             )}
           </div>
@@ -256,7 +256,7 @@ export default function DrafterPage() {
                 <div className="flex rounded-full bg-white p-1">
                   <button
                     onClick={handleApprove}
-                    className="flex-1 rounded-full bg-gray-900 py-2.5 text-center text-sm font-medium text-white hover:bg-gray-800 cursor-pointer"
+                    className="flex-1 rounded-full bg-[#0e103a] py-2.5 text-center text-sm font-medium text-white hover:bg-[#0e103a]/90 cursor-pointer"
                   >
                     New draft
                   </button>

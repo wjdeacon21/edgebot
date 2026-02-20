@@ -136,13 +136,13 @@ export default function StructuredFactsPage() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Structured Facts</h1>
+          <h1 className="text-2xl font-semibold text-[#0e103a]">Structured Facts</h1>
           <p className="mt-1 text-sm text-gray-500">Deterministic truth layer</p>
         </div>
         {isAdmin && (
           <button
             onClick={() => { resetForm(); setShowForm(true); }}
-            className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 cursor-pointer"
+            className="rounded-md bg-[#0e103a] px-4 py-2 text-sm font-medium text-white hover:bg-[#0e103a]/90 cursor-pointer"
           >
             Add New Fact
           </button>
@@ -154,7 +154,7 @@ export default function StructuredFactsPage() {
         <select
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value)}
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none"
+          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#0e103a] focus:border-gray-500 focus:outline-none"
         >
           <option value="">All categories</option>
           {CATEGORIES.map((c) => (
@@ -175,7 +175,7 @@ export default function StructuredFactsPage() {
               <select
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
-                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none"
+                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#0e103a] focus:border-gray-500 focus:outline-none"
               >
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>{c}</option>
@@ -189,7 +189,7 @@ export default function StructuredFactsPage() {
                 value={form.key}
                 onChange={(e) => setForm({ ...form, key: e.target.value })}
                 placeholder="e.g. Check-in time"
-                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none"
+                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#0e103a] focus:border-gray-500 focus:outline-none"
               />
             </div>
             <div>
@@ -199,7 +199,7 @@ export default function StructuredFactsPage() {
                 value={form.value}
                 onChange={(e) => setForm({ ...form, value: e.target.value })}
                 placeholder="e.g. 2:00 PM – 6:00 PM"
-                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none"
+                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#0e103a] focus:border-gray-500 focus:outline-none"
               />
             </div>
             <div>
@@ -209,7 +209,7 @@ export default function StructuredFactsPage() {
                 value={form.source_document}
                 onChange={(e) => setForm({ ...form, source_document: e.target.value })}
                 placeholder="e.g. Edge City Master Guide v2"
-                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none"
+                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#0e103a] focus:border-gray-500 focus:outline-none"
               />
             </div>
             <div className="flex gap-4">
@@ -219,7 +219,7 @@ export default function StructuredFactsPage() {
                   type="number"
                   value={form.page_number}
                   onChange={(e) => setForm({ ...form, page_number: e.target.value })}
-                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none"
+                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#0e103a] focus:border-gray-500 focus:outline-none"
                 />
               </div>
               <div className="flex-1">
@@ -227,7 +227,7 @@ export default function StructuredFactsPage() {
                 <select
                   value={form.confidence}
                   onChange={(e) => setForm({ ...form, confidence: e.target.value as "high" | "medium" | "low" })}
-                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none"
+                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#0e103a] focus:border-gray-500 focus:outline-none"
                 >
                   <option value="high">High</option>
                   <option value="medium">Medium</option>
@@ -239,7 +239,7 @@ export default function StructuredFactsPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50 cursor-pointer"
+                className="rounded-md bg-[#0e103a] px-4 py-2 text-sm font-medium text-white hover:bg-[#0e103a]/90 disabled:opacity-50 cursor-pointer"
               >
                 {saving ? "Saving..." : editingId ? "Update" : "Add"}
               </button>
@@ -288,8 +288,8 @@ export default function StructuredFactsPage() {
               {facts.map((fact) => (
                 <tr key={fact.id} className="border-b border-gray-100">
                   <td className="py-3 pr-4 text-gray-600">{fact.category}</td>
-                  <td className="py-3 pr-4 text-gray-900 font-medium">{fact.key}</td>
-                  <td className="py-3 pr-4 text-gray-900">{fact.value}</td>
+                  <td className="py-3 pr-4 text-[#0e103a] font-medium">{fact.key}</td>
+                  <td className="py-3 pr-4 text-[#0e103a]">{fact.value}</td>
                   <td className="py-3 pr-4 text-gray-500">{fact.source_document || "—"}</td>
                   <td className="py-3 pr-4 text-gray-500">{fact.page_number ?? "—"}</td>
                   <td className="py-3 pr-4">
@@ -321,7 +321,7 @@ export default function StructuredFactsPage() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => startEdit(fact)}
-                            className="text-gray-500 hover:text-gray-900 text-xs cursor-pointer"
+                            className="text-gray-500 hover:text-[#0e103a] text-xs cursor-pointer"
                           >
                             Edit
                           </button>

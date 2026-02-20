@@ -75,7 +75,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+      <h1 className="text-2xl font-semibold text-[#0e103a]">Dashboard</h1>
       <p className="mt-1 text-sm text-gray-500">
         Operational overview
       </p>
@@ -88,7 +88,7 @@ export default async function DashboardPage() {
             className="rounded-md border border-gray-200 bg-white p-5"
           >
             <p className="text-sm text-gray-500">{stat.label}</p>
-            <p className="mt-1 text-2xl font-semibold text-gray-900">
+            <p className="mt-1 text-2xl font-semibold text-[#0e103a]">
               {stat.value}
             </p>
           </div>
@@ -115,7 +115,7 @@ export default async function DashboardPage() {
                   className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-4 py-3"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm text-gray-900">
+                    <p className="truncate text-sm text-[#0e103a]">
                       {q.raw_email.slice(0, 80)}
                       {q.raw_email.length > 80 ? "..." : ""}
                     </p>
