@@ -45,4 +45,7 @@ export interface EmailQuery {
   approved_by: string | null;
   status: "pending" | "approved" | "escalated";
   created_at: string;
+  source?: 'manual' | 'forwarded';
+  subject?: string | null;
+  from_address?: string | null;
 }
