@@ -71,6 +71,40 @@ Reasoning: [One sentence explaining why]`,
   return { intent, reasoning };
 }
 
+const ticketStatusModifiers: Record<string, string> = {
+  purchased: "This person has purchased a ticket to Edge City. Welcome them warmly and be helpful and specific.",
+  not_purchased: "This person has not yet purchased a ticket to Edge City. Be warm and informational. If it's natural to do so, gently highlight what makes Edge special — the community, the depth of programming, the experience of being there — but do not be salesy or pushy. Let the quality speak for itself.",
+};
+
+export async function classifyTicketStatus(rawEmail: string): Promise<{
+  ticket_status: "purchased" | "not_purchased" | "unknown";
+}> {
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 128,
+    system: `You determine whether an inbound email explicitly indicates that the sender has or has not purchased a ticket to Edge City.
+
+IMPORTANT: Default to "unknown". Only classify as "purchased" or "not_purchased" if the email contains very explicit, unambiguous evidence — such as the person directly stating they have bought a ticket, referencing a confirmation or order number, or clearly stating they have not bought one and are asking about doing so.
+
+Do not infer. Do not guess. If there is any doubt, return "unknown".
+
+Respond in EXACTLY this format:
+Ticket status: [purchased|not_purchased|unknown]`,
+    messages: [{ role: "user", content: `EMAIL:\n${rawEmail}` }],
+  });
+
+  const text =
+    response.content[0].type === "text" ? response.content[0].text : "";
+
+  const match = text.match(/Ticket status:\s*(purchased|not_purchased|unknown)/i);
+  const ticket_status = (match?.[1]?.toLowerCase() || "unknown") as
+    | "purchased"
+    | "not_purchased"
+    | "unknown";
+
+  return { ticket_status };
+}
+
 export async function generateResponse(params: {
   rawEmail: string;
   topChunks: ContentChunk[];
@@ -78,6 +112,7 @@ export async function generateResponse(params: {
   conflictFlag: boolean;
   conflicts?: string[];
   intentCategory?: string;
+  ticketStatus?: string;
 }): Promise<{
   suggestedReply: string;
   subjectLine: string;
@@ -106,8 +141,12 @@ export async function generateResponse(params: {
   const toneModifier = params.intentCategory
     ? toneModifiers[params.intentCategory]
     : null;
+  const ticketModifier = params.ticketStatus
+    ? ticketStatusModifiers[params.ticketStatus]
+    : null;
+  const modifierPrefix = [toneModifier, ticketModifier].filter(Boolean).join(" ") ;
 
-  const systemPrompt = `${toneModifier ? `${toneModifier}\n\n` : ""}You are an internal operations employee for Edge City. Your job is to answer participant emails accurately.
+  const systemPrompt = `${modifierPrefix ? `${modifierPrefix}\n\n` : ""}You are an internal operations employee for Edge City. Your job is to answer participant emails accurately.
 
 RULES:
 - You are a human being. Never say anything to suggest otherwise.

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { retrieveRelevantChunks, retrieveStructuredFacts } from "@/lib/retrieval";
 import { detectConflicts } from "@/lib/conflicts";
-import { generateResponse, classifyEmail } from "@/lib/claude";
+import { generateResponse, classifyEmail, classifyTicketStatus } from "@/lib/claude";
 
 // Strip quoted reply chains — truncate at first "On ... wrote:" line
 function stripQuotedReplies(text: string): string {
@@ -34,12 +34,16 @@ export async function POST(request: NextRequest) {
 
     const emailBody = stripQuotedReplies(rawBody);
 
-    // Run RAG + classification in parallel, then generate
-    const [chunks, facts, classification] = await Promise.all([
+    // Run RAG + both classifications in parallel, then generate
+    const [chunks, facts, classification, ticketClassification] = await Promise.all([
       retrieveRelevantChunks(emailBody),
       retrieveStructuredFacts(emailBody),
       classifyEmail(emailBody).catch((err) => {
         console.error("classifyEmail failed:", err);
+        return null;
+      }),
+      classifyTicketStatus(emailBody).catch((err) => {
+        console.error("classifyTicketStatus failed:", err);
         return null;
       }),
     ]);
@@ -53,6 +57,7 @@ export async function POST(request: NextRequest) {
       conflictFlag: conflictResult.conflictFlag,
       conflicts: conflictResult.conflicts,
       intentCategory: classification?.intent,
+      ticketStatus: ticketClassification?.ticket_status,
     });
 
     const sourcesUsed = chunks.map((c) => ({
@@ -75,6 +80,7 @@ export async function POST(request: NextRequest) {
       subject,
       from_address: from,
       intent_category: classification?.intent ?? null,
+      ticket_status: ticketClassification?.ticket_status ?? null,
     });
 
     if (insertError) {

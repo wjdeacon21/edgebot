@@ -50,4 +50,5 @@ export interface EmailQuery {
   from_address?: string | null;
   intent_category?: "info" | "action" | "offer" | "feedback" | null;
   was_manually_overridden?: boolean;
+  ticket_status?: "purchased" | "not_purchased" | "unknown" | null;
 }

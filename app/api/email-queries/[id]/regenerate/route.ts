@@ -10,21 +10,14 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { intent_category } = await request.json();
-
-    if (!intent_category || typeof intent_category !== "string") {
-      return NextResponse.json(
-        { error: "intent_category is required" },
-        { status: 400 }
-      );
-    }
+    const { intent_category, ticket_status } = await request.json();
 
     const supabase = createServiceClient();
 
-    // Fetch the existing record
+    // Fetch the existing record — use stored values as fallback if not provided
     const { data: record, error: fetchError } = await supabase
       .from("email_queries")
-      .select("raw_email")
+      .select("raw_email, intent_category, ticket_status")
       .eq("id", id)
       .single();
 
@@ -33,8 +26,9 @@ export async function POST(
     }
 
     const rawEmail: string = record.raw_email;
+    const resolvedIntent = intent_category ?? record.intent_category ?? undefined;
+    const resolvedTicketStatus = ticket_status ?? record.ticket_status ?? undefined;
 
-    // Run the full pipeline with the new intent
     const [chunks, facts] = await Promise.all([
       retrieveRelevantChunks(rawEmail),
       retrieveStructuredFacts(rawEmail),
@@ -48,17 +42,20 @@ export async function POST(
       structuredFacts: facts,
       conflictFlag: conflictResult.conflictFlag,
       conflicts: conflictResult.conflicts,
-      intentCategory: intent_category,
+      intentCategory: resolvedIntent,
+      ticketStatus: resolvedTicketStatus,
     });
 
-    // Update the record
+    const updatePayload: Record<string, unknown> = {
+      suggested_reply: response.suggestedReply,
+      was_manually_overridden: true,
+    };
+    if (intent_category !== undefined) updatePayload.intent_category = intent_category;
+    if (ticket_status !== undefined) updatePayload.ticket_status = ticket_status;
+
     const { error: updateError } = await supabase
       .from("email_queries")
-      .update({
-        suggested_reply: response.suggestedReply,
-        intent_category,
-        was_manually_overridden: true,
-      })
+      .update(updatePayload)
       .eq("id", id);
 
     if (updateError) {
