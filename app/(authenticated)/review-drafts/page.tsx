@@ -20,6 +20,7 @@ export default function ReviewDraftsPage() {
   const [loading, setLoading] = useState(true);
   const [gmailLoading, setGmailLoading] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [expandedMessages, setExpandedMessages] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     async function fetchDrafts() {
@@ -119,25 +120,45 @@ export default function ReviewDraftsPage() {
         {/* Draft cards */}
         {!loading &&
           drafts.map((draft) => (
-            <div key={draft.id} className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div key={draft.id} className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-6">
               {/* Card header */}
-              <div className="mb-3 flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-medium text-[#0e103a]">
-                    {draft.subject || "(No subject)"}
-                  </p>
-                  <p className="mt-0.5 text-xs text-gray-500">{draft.from_address || "Unknown sender"}</p>
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div className="flex-1 space-y-2">
+                  <div>
+                    <p className="text-sm font-medium text-[#0e103a]">{draft.subject || "(No subject)"}</p>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-gray-400">From</span>
+                    <p className="text-xs text-gray-500">{draft.from_address || "Unknown sender"}</p>
+                  </div>
                 </div>
                 <span className="shrink-0 text-xs text-gray-400">{timeAgo(draft.created_at)}</span>
               </div>
 
               {/* Email snippet */}
-              <p className="mb-4 text-xs text-gray-500">
-                {draft.raw_email.slice(0, 120)}
-                {draft.raw_email.length > 120 ? "…" : ""}
-              </p>
+              <div className="mb-4 flex items-start gap-2">
+                <div className="mt-0.5 flex shrink-0 items-center gap-1">
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Message</span>
+                  {draft.raw_email.split('\n')[0].trim() !== draft.raw_email.trim() && (
+                    <button
+                      onClick={() => setExpandedMessages((prev) => ({ ...prev, [draft.id]: !prev[draft.id] }))}
+                      className="text-sm font-bold text-gray-400 hover:text-gray-600 cursor-pointer leading-none"
+                    >
+                      {expandedMessages[draft.id] ? "×" : "+"}
+                    </button>
+                  )}
+                </div>
+                <div className="w-0 flex-1 overflow-hidden">
+                  <p className="whitespace-pre-wrap break-all text-xs text-gray-500">
+                    {expandedMessages[draft.id] ? draft.raw_email : draft.raw_email.split('\n')[0].trim() + (draft.raw_email.split('\n')[0].trim() !== draft.raw_email.trim() ? "…" : "")}
+                  </p>
+                </div>
+              </div>
 
               {/* Editable reply */}
+              <div className="mb-2">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Reply</span>
+              </div>
               <textarea
                 value={editedReplies[draft.id] ?? ""}
                 onChange={(e) =>

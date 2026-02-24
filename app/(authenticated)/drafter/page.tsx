@@ -26,6 +26,21 @@ export default function DrafterPage() {
   const [error, setError] = useState<string | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
   const [gmailLoading, setGmailLoading] = useState(false);
+  const [activeIntents, setActiveIntents] = useState<Set<string>>(new Set());
+
+  const EMAIL_INTENTS = ["Info", "Action", "Offer", "Feedback"] as const;
+
+  function toggleIntent(intent: string) {
+    setActiveIntents((prev) => {
+      const next = new Set(prev);
+      if (next.has(intent)) {
+        next.delete(intent);
+      } else {
+        next.add(intent);
+      }
+      return next;
+    });
+  }
 
   async function handleGenerate() {
     if (!rawEmail.trim() || loading) return;
@@ -38,7 +53,7 @@ export default function DrafterPage() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rawEmail }),
+        body: JSON.stringify({ rawEmail, emailIntents: Array.from(activeIntents) }),
       });
 
       const data = await res.json();
@@ -163,6 +178,27 @@ export default function DrafterPage() {
           <div className={`rounded-full px-6 py-3 text-center text-base font-bold transition-colors font-machina ${leftPanelDimmed ? "border border-gray-200 bg-white text-gray-400" : "bg-[#0e103a] text-white"}`}>
             Bring in an email or question below
           </div>
+          {/* Email intent pills */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-gray-400 font-medium shrink-0">Email intent</span>
+            {EMAIL_INTENTS.map((intent) => {
+              const isActive = activeIntents.has(intent);
+              return (
+                <button
+                  key={intent}
+                  onClick={() => toggleIntent(intent)}
+                  className={`rounded-full px-4 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                    isActive
+                      ? "bg-[#0e103a] text-white"
+                      : "border border-gray-200 bg-white text-gray-400 hover:border-gray-300 hover:text-gray-500"
+                  }`}
+                >
+                  {intent}
+                </button>
+              );
+            })}
+          </div>
+
           <div className={`flex-1 rounded-2xl p-[2px] ${showInputShimmer ? "purple-shimmer" : "bg-gray-200"}`}>
             <div className="h-full rounded-2xl bg-white p-1">
               <textarea
