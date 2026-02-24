@@ -8,7 +8,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { status, approved_version, approved_by } = body;
+    const { status, approved_version, approved_by, intent_category, was_manually_overridden } = body;
 
     const supabase = createServiceClient();
 
@@ -16,6 +16,8 @@ export async function PATCH(
     if (status) update.status = status;
     if (approved_version !== undefined) update.approved_version = approved_version;
     if (approved_by !== undefined) update.approved_by = approved_by;
+    if (intent_category !== undefined) update.intent_category = intent_category;
+    if (was_manually_overridden !== undefined) update.was_manually_overridden = was_manually_overridden;
 
     const { data, error } = await supabase
       .from("email_queries")

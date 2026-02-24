@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { retrieveRelevantChunks, retrieveStructuredFacts } from "@/lib/retrieval";
 import { detectConflicts } from "@/lib/conflicts";
-import { generateResponse } from "@/lib/claude";
+import { generateResponse, classifyEmail } from "@/lib/claude";
 
 // Strip quoted reply chains — truncate at first "On ... wrote:" line
 function stripQuotedReplies(text: string): string {
@@ -34,10 +34,14 @@ export async function POST(request: NextRequest) {
 
     const emailBody = stripQuotedReplies(rawBody);
 
-    // Run the same RAG + generation pipeline as /api/generate
-    const [chunks, facts] = await Promise.all([
+    // Run RAG + classification in parallel, then generate
+    const [chunks, facts, classification] = await Promise.all([
       retrieveRelevantChunks(emailBody),
       retrieveStructuredFacts(emailBody),
+      classifyEmail(emailBody).catch((err) => {
+        console.error("classifyEmail failed:", err);
+        return null;
+      }),
     ]);
 
     const conflictResult = await detectConflicts(chunks, facts);
@@ -48,6 +52,7 @@ export async function POST(request: NextRequest) {
       structuredFacts: facts,
       conflictFlag: conflictResult.conflictFlag,
       conflicts: conflictResult.conflicts,
+      intentCategory: classification?.intent,
     });
 
     const sourcesUsed = chunks.map((c) => ({
@@ -69,6 +74,7 @@ export async function POST(request: NextRequest) {
       source: "forwarded",
       subject,
       from_address: from,
+      intent_category: classification?.intent ?? null,
     });
 
     if (insertError) {

@@ -21,6 +21,8 @@ export default function ReviewDraftsPage() {
   const [gmailLoading, setGmailLoading] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [expandedMessages, setExpandedMessages] = useState<Record<string, boolean>>({});
+  const [intentOverrides, setIntentOverrides] = useState<Record<string, string>>({});
+  const [regenerating, setRegenerating] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     async function fetchDrafts() {
@@ -29,12 +31,15 @@ export default function ReviewDraftsPage() {
         if (!res.ok) throw new Error("Failed to fetch");
         const data: EmailQuery[] = await res.json();
         setDrafts(data);
-        // Pre-populate editable replies
+        // Pre-populate editable replies and intent overrides
         const replies: Record<string, string> = {};
+        const intents: Record<string, string> = {};
         data.forEach((d) => {
           replies[d.id] = d.suggested_reply || "";
+          if (d.intent_category) intents[d.id] = d.intent_category;
         });
         setEditedReplies(replies);
+        setIntentOverrides(intents);
       } catch {
         // silently fail — empty state handles it
       } finally {
@@ -76,6 +81,41 @@ export default function ReviewDraftsPage() {
       }));
     } finally {
       setGmailLoading((prev) => ({ ...prev, [draft.id]: false }));
+    }
+  }
+
+  async function handleRegenerate(draft: EmailQuery) {
+    const intent = intentOverrides[draft.id];
+    if (!intent || regenerating[draft.id]) return;
+
+    setRegenerating((prev) => ({ ...prev, [draft.id]: true }));
+    setErrors((prev) => ({ ...prev, [draft.id]: "" }));
+
+    try {
+      const res = await fetch(`/api/email-queries/${draft.id}/regenerate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ intent_category: intent }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrors((prev) => ({
+          ...prev,
+          [draft.id]: data.error || "Failed to regenerate draft",
+        }));
+        return;
+      }
+
+      setEditedReplies((prev) => ({ ...prev, [draft.id]: data.suggestedReply }));
+    } catch {
+      setErrors((prev) => ({
+        ...prev,
+        [draft.id]: "Failed to regenerate. Please try again.",
+      }));
+    } finally {
+      setRegenerating((prev) => ({ ...prev, [draft.id]: false }));
     }
   }
 
@@ -155,6 +195,31 @@ export default function ReviewDraftsPage() {
                 </div>
               </div>
 
+              {/* Intent selector */}
+              <div className="mb-4 flex items-center gap-2">
+                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Intent</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {(["info", "action", "offer", "feedback"] as const).map((intent) => {
+                    const active = intentOverrides[draft.id] === intent;
+                    return (
+                      <button
+                        key={intent}
+                        onClick={() =>
+                          setIntentOverrides((prev) => ({ ...prev, [draft.id]: intent }))
+                        }
+                        className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors cursor-pointer ${
+                          active
+                            ? "bg-[#0e103a] text-white"
+                            : "border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-500"
+                        }`}
+                      >
+                        {intent}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Editable reply */}
               <div className="mb-2">
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Reply</span>
@@ -176,7 +241,14 @@ export default function ReviewDraftsPage() {
               )}
 
               {/* Action row */}
-              <div className="mt-3 flex justify-end">
+              <div className="mt-3 flex justify-end gap-2">
+                <button
+                  onClick={() => handleRegenerate(draft)}
+                  disabled={regenerating[draft.id] || !intentOverrides[draft.id]}
+                  className="rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-800 disabled:opacity-40 cursor-pointer transition-colors"
+                >
+                  {regenerating[draft.id] ? "Regenerating…" : "Regenerate reply"}
+                </button>
                 <button
                   onClick={() => handleOpenInGmail(draft)}
                   disabled={gmailLoading[draft.id] || !editedReplies[draft.id]?.trim()}

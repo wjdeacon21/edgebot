@@ -167,7 +167,7 @@ export default function DrafterPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 p-4 pt-14 lg:p-8">
-      <h1 className="text-2xl font-semibold text-[#0e103a] font-machina">Drafter</h1>
+      <h1 className="text-2xl font-semibold text-[#0e103a] font-machina">Create Drafts</h1>
       <p className="mt-1 text-sm text-gray-500">
         Respond to FAQs from Edge Participants
       </p>

@@ -27,12 +27,57 @@ export async function generateEmbedding(text: string): Promise<number[]> {
   return data.data[0].embedding;
 }
 
+const toneModifiers: Record<string, string> = {
+  info: "The person needs information. Be warm, specific, and clear.",
+  action: "The person wants to complete a transaction or resolve a problem. Be efficient and direct. If something has gone wrong, lead with empathy.",
+  offer: "An inbound offer or pitch. Be professional and non-committal. Route to the appropriate contact if needed.",
+  feedback: "The person is sharing their experience. Be warm and appreciative.",
+};
+
+export async function classifyEmail(rawEmail: string): Promise<{
+  intent: "info" | "action" | "offer" | "feedback";
+  reasoning: string;
+}> {
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 256,
+    system: `You classify inbound emails into one of four intent categories.
+
+Categories:
+- info: The person is asking for information or has a question.
+- action: The person wants to complete a transaction, make a change, or resolve a problem.
+- offer: An inbound offer, pitch, or partnership inquiry.
+- feedback: The person is sharing feedback, a review, or their experience.
+
+Respond in EXACTLY this format:
+Intent: [info|action|offer|feedback]
+Reasoning: [One sentence explaining why]`,
+    messages: [{ role: "user", content: `EMAIL:\n${rawEmail}` }],
+  });
+
+  const text =
+    response.content[0].type === "text" ? response.content[0].text : "";
+
+  const intentMatch = text.match(/Intent:\s*(info|action|offer|feedback)/i);
+  const reasoningMatch = text.match(/Reasoning:\s*(.+)/i);
+
+  const intent = (intentMatch?.[1]?.toLowerCase() || "info") as
+    | "info"
+    | "action"
+    | "offer"
+    | "feedback";
+  const reasoning = reasoningMatch?.[1]?.trim() || "";
+
+  return { intent, reasoning };
+}
+
 export async function generateResponse(params: {
   rawEmail: string;
   topChunks: ContentChunk[];
   structuredFacts: StructuredFact[];
   conflictFlag: boolean;
   conflicts?: string[];
+  intentCategory?: string;
 }): Promise<{
   suggestedReply: string;
   subjectLine: string;
@@ -58,7 +103,11 @@ export async function generateResponse(params: {
       ? `\n\nCONFLICT ALERT: The following conflicts were detected:\n${params.conflicts.map((c) => `- ${c}`).join("\n")}`
       : "";
 
-  const systemPrompt = `You are an internal operations employee for Edge City. Your job is to answer participant emails accurately.
+  const toneModifier = params.intentCategory
+    ? toneModifiers[params.intentCategory]
+    : null;
+
+  const systemPrompt = `${toneModifier ? `${toneModifier}\n\n` : ""}You are an internal operations employee for Edge City. Your job is to answer participant emails accurately.
 
 RULES:
 - You are a human being. Never say anything to suggest otherwise.

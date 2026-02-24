@@ -48,4 +48,6 @@ export interface EmailQuery {
   source?: 'manual' | 'forwarded';
   subject?: string | null;
   from_address?: string | null;
+  intent_category?: "info" | "action" | "offer" | "feedback" | null;
+  was_manually_overridden?: boolean;
 }

@@ -6,7 +6,7 @@ import { generateResponse } from "@/lib/claude";
 
 export async function POST(request: Request) {
   try {
-    const { rawEmail } = await request.json();
+    const { rawEmail, intentCategory } = await request.json();
 
     if (!rawEmail || typeof rawEmail !== "string") {
       return NextResponse.json(
@@ -31,6 +31,7 @@ export async function POST(request: Request) {
       structuredFacts: facts,
       conflictFlag: conflictResult.conflictFlag,
       conflicts: conflictResult.conflicts,
+      intentCategory,
     });
 
     // 4. Save to email_queries
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
         conflict_flag: conflictResult.conflictFlag,
         sources_used: sourcesUsed,
         status: "pending",
+        ...(intentCategory ? { intent_category: intentCategory } : {}),
       })
       .select("id")
       .single();
