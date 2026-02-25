@@ -129,7 +129,7 @@ export default function StructuredFactsPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div>
-        <h1 className="text-2xl font-semibold text-[#0e103a]">Structured Facts</h1>
+        <h1 className="text-2xl font-semibold text-[#0e103a]">Structured Inputs</h1>
         <p className="mt-1 text-sm text-gray-500">Deterministic truth layer</p>
       </div>
 
