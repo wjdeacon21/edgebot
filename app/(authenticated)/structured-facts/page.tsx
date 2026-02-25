@@ -13,6 +13,7 @@ const CATEGORIES = [
   "WiFi & coworking",
   "Programming structure",
   "Attendance flexibility",
+  "Locations",
   "Other",
 ];
 
@@ -134,23 +135,13 @@ export default function StructuredFactsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-[#0e103a]">Structured Facts</h1>
-          <p className="mt-1 text-sm text-gray-500">Deterministic truth layer</p>
-        </div>
-        {isAdmin && (
-          <button
-            onClick={() => { resetForm(); setShowForm(true); }}
-            className="rounded-md bg-[#0e103a] px-4 py-2 text-sm font-medium text-white hover:bg-[#0e103a]/90 cursor-pointer"
-          >
-            Add New Fact
-          </button>
-        )}
+      <div>
+        <h1 className="text-2xl font-semibold text-[#0e103a]">Structured Facts</h1>
+        <p className="mt-1 text-sm text-gray-500">Deterministic truth layer</p>
       </div>
 
-      {/* Filter */}
-      <div className="mt-6">
+      {/* Filter + Add */}
+      <div className="mt-6 flex items-center gap-3">
         <select
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value)}
@@ -161,6 +152,14 @@ export default function StructuredFactsPage() {
             <option key={c} value={c}>{c}</option>
           ))}
         </select>
+        {isAdmin && (
+          <button
+            onClick={() => { resetForm(); setShowForm(true); }}
+            className="rounded-md bg-[#0e103a] px-4 py-2 text-sm font-medium text-white hover:bg-[#0e103a]/90 cursor-pointer"
+          >
+            Add New Fact
+          </button>
+        )}
       </div>
 
       {/* Add/Edit Form */}
