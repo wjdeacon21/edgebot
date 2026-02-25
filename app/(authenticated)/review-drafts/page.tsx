@@ -75,6 +75,7 @@ export default function ReviewDraftsPage() {
   const [intentOverrides, setIntentOverrides] = useState<Record<string, string>>({});
   const [ticketStatusOverrides, setTicketStatusOverrides] = useState<Record<string, string>>({});
   const [regenerating, setRegenerating] = useState<Record<string, boolean>>({});
+  const [deleting, setDeleting] = useState<Record<string, boolean>>({});
   const [senderName, setSenderName] = useState<string>("");
 
   useEffect(() => {
@@ -152,6 +153,12 @@ export default function ReviewDraftsPage() {
     } finally {
       setGmailLoading((prev) => ({ ...prev, [draft.id]: false }));
     }
+  }
+
+  async function handleDelete(id: string) {
+    setDeleting((prev) => ({ ...prev, [id]: true }));
+    await fetch(`/api/email-queries/${id}`, { method: "DELETE" });
+    setDrafts((prev) => prev.filter((d) => d.id !== id));
   }
 
   async function handleRegenerate(draft: EmailQuery) {
@@ -359,7 +366,15 @@ export default function ReviewDraftsPage() {
               )}
 
               {/* Action row */}
-              <div className="mt-3 flex justify-end gap-2">
+              <div className="mt-3 flex justify-between gap-2">
+                <button
+                  onClick={() => handleDelete(draft.id)}
+                  disabled={deleting[draft.id]}
+                  className="rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-400 hover:border-red-200 hover:text-red-500 disabled:opacity-40 cursor-pointer transition-colors"
+                >
+                  {deleting[draft.id] ? "Deleting…" : "Delete"}
+                </button>
+                <div className="flex gap-2">
                 <button
                   onClick={() => handleRegenerate(draft)}
                   disabled={regenerating[draft.id]}
@@ -374,6 +389,7 @@ export default function ReviewDraftsPage() {
                 >
                   {gmailLoading[draft.id] ? "Opening…" : "Open in Gmail"}
                 </button>
+                </div>
               </div>
             </div>
           ))}
