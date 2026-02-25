@@ -6,13 +6,13 @@ import { useUserRole } from "@/lib/useUserRole";
 import { useState } from "react";
 
 const navItems = [
-{ href: "/drafter", label: "Create Drafts", icon: "✉", minRole: "ops_reviewer" as const },
+{ href: "/drafter", label: "Create Drafts", icon: "✏️", minRole: "ops_reviewer" as const },
   { href: "/review-drafts", label: "Review Drafts", icon: "📬", minRole: "ops_reviewer" as const },
   { href: "/sources", label: "Sources", icon: "📄", minRole: "admin" as const },
-  { href: "/structured-facts", label: "Structured Facts", icon: "▤", minRole: "admin" as const },
-  { href: "/logs", label: "Logs", icon: "☰", minRole: "admin" as const },
-  { href: "/tone-examples", label: "Tone Examples", icon: "✍", minRole: "admin" as const },
-  { href: "/admin", label: "Admin", icon: "⚙", minRole: "admin" as const },
+  { href: "/structured-facts", label: "Structured Facts", icon: "🗂️", minRole: "admin" as const },
+  { href: "/logs", label: "Logs", icon: "📋", minRole: "admin" as const },
+  { href: "/tone-examples", label: "Tone Examples", icon: "✍️", minRole: "admin" as const },
+  { href: "/admin", label: "Admin", icon: "⚙️", minRole: "admin" as const },
 ];
 
 export function Sidebar() {
