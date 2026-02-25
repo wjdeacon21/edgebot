@@ -35,7 +35,7 @@ const toneModifiers: Record<string, string> = {
 };
 
 export async function classifyEmail(rawEmail: string): Promise<{
-  intent: "info" | "action" | "offer" | "feedback";
+  intent: "info" | "action" | "offer" | "other";
   reasoning: string;
 }> {
   const response = await anthropic.messages.create({
