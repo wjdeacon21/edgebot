@@ -105,7 +105,7 @@ Ticket status: [purchased|not_purchased|unknown]`,
   return { ticket_status };
 }
 
-export async function generateResponse(params: {
+type GenerateParams = {
   rawEmail: string;
   topChunks: ContentChunk[];
   structuredFacts: StructuredFact[];
@@ -115,10 +115,9 @@ export async function generateResponse(params: {
   ticketStatus?: string;
   senderName?: string;
   toneExamples?: string[];
-}): Promise<{
-  suggestedReply: string;
-  subjectLine: string;
-}> {
+};
+
+function buildPromptParts(params: GenerateParams): { systemPrompt: string; userMessage: string } {
   const chunksContext = params.topChunks
     .map(
       (c, i) =>
@@ -144,7 +143,7 @@ export async function generateResponse(params: {
   const ticketModifier = params.ticketStatus
     ? ticketStatusModifiers[params.ticketStatus]
     : null;
-  const modifierPrefix = [toneModifier, ticketModifier].filter(Boolean).join(" ") ;
+  const modifierPrefix = [toneModifier, ticketModifier].filter(Boolean).join(" ");
 
   const toneExamplesBlock =
     params.toneExamples && params.toneExamples.length > 0
@@ -174,7 +173,7 @@ Respond in EXACTLY this format:
 [A concise, professional email subject line for the reply. E.g. "Re: Accommodation Details for Edge City"]
 
 --- SUGGESTED REPLY ---
-[A deeply human reply to the participant, written by an insider at Edge with deep familiarity. Begin with a salutation on its own line — infer the first name from the email (e.g. "Hi Sarah,") or use "Hi there," if unclear — then on the next line begin with "Thanks for reaching out!" Rather than merely signalling warmth or excitement, express it through genuine helpfulness. First paragraph answers their question. No emojis, no speculation. NEVER include citations, source references, or document names — this text is sent directly to the participant. 
+[A deeply human reply to the participant, written by an insider at Edge with deep familiarity. Begin with a salutation on its own line — infer the first name from the email (e.g. "Hi Sarah,") or use "Hi there," if unclear — then on the next line begin with "Thanks for reaching out!" Rather than merely signalling warmth or excitement, express it through genuine helpfulness. First paragraph answers their question. No emojis, no speculation. NEVER include citations, source references, or document names — this text is sent directly to the participant.
 Check the text for redundancy before sending. Be professional, but skew towards the formality level of the incoming email--casual in, casual out. Aim for naturalistic responses. Keep replies short, ideally one or two paragraphs unless more detail is needed.
 Before finalizing, re-scan for every [LINK] fact you mentioned. Each must appear as a Markdown link — not plain text.]
 
@@ -192,6 +191,28 @@ ${factsContext || "No matching structured facts."}${conflictContext}
 
 Please analyze this email and provide your response in the required format.`;
 
+  return { systemPrompt, userMessage };
+}
+
+export function parseGenerateResponse(text: string): { suggestedReply: string; subjectLine: string } {
+  const subjectLineMatch = text.match(
+    /---\s*SUBJECT LINE\s*---\s*([\s\S]*?)(?=---\s*SUGGESTED REPLY\s*---|$)/i
+  );
+  const suggestedReplyMatch = text.match(
+    /---\s*SUGGESTED REPLY\s*---\s*([\s\S]*?)(?=---\s*IF UNSURE\s*---|$)/i
+  );
+  return {
+    subjectLine: subjectLineMatch?.[1]?.trim() || "Re: Your Edge City Inquiry",
+    suggestedReply: suggestedReplyMatch?.[1]?.trim() || "",
+  };
+}
+
+export async function generateResponse(params: GenerateParams): Promise<{
+  suggestedReply: string;
+  subjectLine: string;
+}> {
+  const { systemPrompt, userMessage } = buildPromptParts(params);
+
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 2048,
@@ -202,19 +223,20 @@ Please analyze this email and provide your response in the required format.`;
   const text =
     response.content[0].type === "text" ? response.content[0].text : "";
 
-  // Parse the structured response
-  const subjectLineMatch = text.match(
-    /---\s*SUBJECT LINE\s*---\s*([\s\S]*?)(?=---\s*SUGGESTED REPLY\s*---|$)/i
-  );
-  const suggestedReplyMatch = text.match(
-    /---\s*SUGGESTED REPLY\s*---\s*([\s\S]*?)(?=---\s*IF UNSURE\s*---|$)/i
-  );
+  return parseGenerateResponse(text);
+}
 
-  const subjectLine = subjectLineMatch?.[1]?.trim() || "Re: Your Edge City Inquiry";
-  const suggestedReply = suggestedReplyMatch?.[1]?.trim() || "";
+export async function* streamGenerateResponse(params: GenerateParams): AsyncGenerator<string> {
+  const { systemPrompt, userMessage } = buildPromptParts(params);
 
-  return {
-    suggestedReply,
-    subjectLine,
-  };
+  const stream = anthropic.messages.stream({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 2048,
+    system: systemPrompt,
+    messages: [{ role: "user", content: userMessage }],
+  });
+
+  for await (const text of stream.textStream) {
+    yield text;
+  }
 }

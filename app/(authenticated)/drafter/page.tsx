@@ -31,6 +31,7 @@ export default function DrafterPage() {
   const [error, setError] = useState<string | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
   const [gmailLoading, setGmailLoading] = useState(false);
+  const [streamingText, setStreamingText] = useState<string>("");
   const [intentCategory, setIntentCategory] = useState<string>("");
   const [ticketStatus, setTicketStatus] = useState<string>("");
   const [senderName, setSenderName] = useState<string>("");
@@ -70,6 +71,7 @@ export default function DrafterPage() {
     setLoading(true);
     setResult(null);
     setError(null);
+    setStreamingText("");
     editor?.commands.setContent("");
 
     try {
@@ -79,17 +81,67 @@ export default function DrafterPage() {
         body: JSON.stringify({ rawEmail, intentCategory, ticketStatus, senderName }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({}));
         setError(data.error || "Generation failed");
         return;
       }
 
-      const html = markdownLinksToHtml(data.suggestedReply);
-      setResult(data);
-      setEditedReply(html);
-      editor?.commands.setContent(html);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let fullText = "";
+      let displayText = "";
+      let inReplySection = false;
+      const REPLY_START = "--- SUGGESTED REPLY ---";
+      const REPLY_END = "--- IF UNSURE ---";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const parsed = JSON.parse(line.slice(6));
+
+          if (parsed.type === "text") {
+            fullText += parsed.content;
+
+            if (!inReplySection) {
+              const markerIdx = fullText.indexOf(REPLY_START);
+              if (markerIdx !== -1) {
+                inReplySection = true;
+                displayText = fullText.slice(markerIdx + REPLY_START.length).trimStart();
+              }
+            } else {
+              displayText += parsed.content;
+            }
+
+            // Don't show IF UNSURE section
+            const endIdx = displayText.indexOf(REPLY_END);
+            const visibleText = endIdx !== -1 ? displayText.slice(0, endIdx) : displayText;
+            setStreamingText(visibleText);
+
+          } else if (parsed.type === "done") {
+            const suggestedReplyMatch = fullText.match(
+              /---\s*SUGGESTED REPLY\s*---\s*([\s\S]*?)(?=---\s*IF UNSURE\s*---|$)/i
+            );
+            const suggestedReply = suggestedReplyMatch?.[1]?.trim() || displayText.trim();
+            const html = markdownLinksToHtml(suggestedReply);
+            setResult({ id: parsed.id, suggestedReply, subjectLine: parsed.subjectLine });
+            setEditedReply(html);
+            editor?.commands.setContent(html);
+            setStreamingText("");
+
+          } else if (parsed.type === "error") {
+            setError(parsed.message || "Generation failed");
+          }
+        }
+      }
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -322,8 +374,8 @@ export default function DrafterPage() {
           </button>
 
           <div className="flex-1 rounded-2xl border border-gray-200 bg-white p-1">
-            {/* Loading skeleton */}
-            {loading && (
+            {/* Loading skeleton — shown only until words start arriving */}
+            {loading && !streamingText && (
               <div className="animate-pulse space-y-4 px-5 py-4">
                 <div className="h-3 w-3/4 rounded bg-gray-100" />
                 <div className="h-3 w-full rounded bg-gray-100" />
@@ -332,6 +384,13 @@ export default function DrafterPage() {
                 <div className="h-3 w-2/3 rounded bg-gray-100" />
                 <div className="h-3 w-full rounded bg-gray-100" />
                 <div className="h-3 w-4/5 rounded bg-gray-100" />
+              </div>
+            )}
+
+            {/* Streaming text — words appear as generated */}
+            {streamingText && (
+              <div className="h-full min-h-[400px] px-5 py-4 text-sm text-[#0e103a] whitespace-pre-wrap">
+                {streamingText}
               </div>
             )}
 
