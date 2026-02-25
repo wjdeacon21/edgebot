@@ -234,7 +234,7 @@ export default function ReviewDraftsPage() {
             <span className="text-4xl">📬</span>
             <p className="mt-4 text-sm font-medium text-[#0e103a]">No forwarded emails yet</p>
             <p className="mt-1 text-sm text-gray-500">
-              Forward a participant email to your Postmark inbound address to get started.
+              Forward any email to edgecityops@watsondeacon.com, then check back here to review an automatically generated response.
             </p>
           </div>
         )}
