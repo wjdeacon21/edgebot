@@ -236,7 +236,12 @@ export async function* streamGenerateResponse(params: GenerateParams): AsyncGene
     messages: [{ role: "user", content: userMessage }],
   });
 
-  for await (const text of stream.textStream) {
-    yield text;
+  for await (const event of stream) {
+    if (
+      event.type === "content_block_delta" &&
+      event.delta.type === "text_delta"
+    ) {
+      yield event.delta.text;
+    }
   }
 }
