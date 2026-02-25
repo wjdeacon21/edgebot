@@ -372,7 +372,7 @@ export default function ReviewDraftsPage() {
                   disabled={gmailLoading[draft.id] || !(editedReplies[draft.id] || "").replace(/<[^>]*>/g, "").trim()}
                   className="rounded-full bg-[#0e103a] px-5 py-2 text-sm font-medium text-white hover:bg-[#0a0c2e] disabled:opacity-50 cursor-pointer"
                 >
-                  {gmailLoading[draft.id] ? "Sending…" : "Open in Gmail"}
+                  {gmailLoading[draft.id] ? "Opening…" : "Open in Gmail"}
                 </button>
               </div>
             </div>

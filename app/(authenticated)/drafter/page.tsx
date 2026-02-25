@@ -347,7 +347,7 @@ export default function DrafterPage() {
                     disabled={gmailLoading || !editedReply.replace(/<[^>]*>/g, "").trim()}
                     className="flex-1 rounded-full py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
                   >
-                    {gmailLoading ? "Sending..." : "Open in Gmail"}
+                    {gmailLoading ? "Opening..." : "Open in Gmail"}
                   </button>
                 </div>
               </div>
