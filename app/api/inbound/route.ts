@@ -4,12 +4,34 @@ import { retrieveRelevantChunks, retrieveStructuredFacts } from "@/lib/retrieval
 import { detectConflicts } from "@/lib/conflicts";
 import { generateResponse, classifyEmail, classifyTicketStatus } from "@/lib/claude";
 
-// Strip quoted reply chains — truncate at first "On ... wrote:" line
-function stripQuotedReplies(text: string): string {
-  const match = text.match(/\nOn .+wrote:/);
-  if (match && match.index !== undefined) {
-    return text.slice(0, match.index).trim();
+// Extract the actual participant message from an email body.
+// Handles two cases:
+//   1. Reply chain — keep only the new message (content before "On [date] ... wrote:")
+//   2. Forward — the "On ... wrote:" line IS the forwarding header, so extract content after it
+// Also handles Gmail's "---------- Forwarded message ---------" format.
+function extractEmailBody(text: string): string {
+  // Case 1 & 2: "On [date] [name] wrote:" pattern
+  const replyMatch = text.match(/\nOn .+wrote:/);
+  if (replyMatch && replyMatch.index !== undefined) {
+    const before = text.slice(0, replyMatch.index).trim();
+    if (before.length > 0) {
+      // Reply with quoted history — keep only the new message
+      return before;
+    }
+    // Nothing before the marker — this is a forward.
+    // Extract what's after the "On ... wrote:" line, stripping ">" quote prefixes.
+    const after = text.slice(replyMatch.index + replyMatch[0].length).trim();
+    return after.replace(/^>\s?/gm, "").trim();
   }
+
+  // Case 3: Gmail "---------- Forwarded message ---------" format
+  // Headers (From/Date/Subject/To) appear on the lines immediately after the dashes,
+  // then a blank line separates them from the actual body.
+  const fwdMatch = text.match(/^-{4,}\s*Forwarded message\s*-{4,}[\s\S]*?\n\n([\s\S]+)/im);
+  if (fwdMatch) {
+    return fwdMatch[1].trim();
+  }
+
   return text.trim();
 }
 
@@ -32,7 +54,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Empty email body" }, { status: 400 });
     }
 
-    const emailBody = stripQuotedReplies(rawBody);
+    const emailBody = extractEmailBody(rawBody);
+
+    if (!emailBody) {
+      return NextResponse.json({ error: "Could not extract email body" }, { status: 400 });
+    }
 
     // Magic subject prefix: store as tone example and short-circuit
     const TONE_EXAMPLE_PREFIX = "tone:";
@@ -46,7 +72,7 @@ export async function POST(request: NextRequest) {
     const supabase = createServiceClient();
     const [chunks, facts, classification, ticketClassification, toneExamplesResult] = await Promise.all([
       retrieveRelevantChunks(emailBody),
-      retrieveStructuredFacts(emailBody),
+      retrieveStructuredFacts(),
       classifyEmail(emailBody).catch((err) => {
         console.error("classifyEmail failed:", err);
         return null;

@@ -31,7 +31,8 @@ export default function DrafterPage() {
   const [error, setError] = useState<string | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
   const [gmailLoading, setGmailLoading] = useState(false);
-  const [activeIntents, setActiveIntents] = useState<Set<string>>(new Set());
+  const [intentCategory, setIntentCategory] = useState<string>("");
+  const [ticketStatus, setTicketStatus] = useState<string>("");
   const [senderName, setSenderName] = useState<string>("");
 
   useEffect(() => {
@@ -44,8 +45,6 @@ export default function DrafterPage() {
       setSenderName(fullName.split(" ")[0]);
     });
   }, []);
-
-  const EMAIL_INTENTS = ["Info", "Action", "Offer", "Feedback"] as const;
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -65,18 +64,6 @@ export default function DrafterPage() {
     },
   });
 
-  function toggleIntent(intent: string) {
-    setActiveIntents((prev) => {
-      const next = new Set(prev);
-      if (next.has(intent)) {
-        next.delete(intent);
-      } else {
-        next.add(intent);
-      }
-      return next;
-    });
-  }
-
   async function handleGenerate() {
     if (!rawEmail.trim() || loading) return;
 
@@ -89,7 +76,7 @@ export default function DrafterPage() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rawEmail, emailIntents: Array.from(activeIntents), senderName }),
+        body: JSON.stringify({ rawEmail, intentCategory, ticketStatus, senderName }),
       });
 
       const data = await res.json();
@@ -215,28 +202,70 @@ export default function DrafterPage() {
       <div className="mt-6 grid flex-1 grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Left Column — Input */}
         <div className={`flex flex-col gap-4 transition-all duration-500 ${leftPanelDimmed ? "opacity-50 grayscale" : ""}`}>
-          <div className={`rounded-full px-6 py-3 text-center text-base font-bold transition-colors font-machina ${leftPanelDimmed ? "border border-gray-200 bg-white text-gray-400" : "bg-[#0e103a] text-white"}`}>
+          <div className={`rounded-xl px-6 py-3 text-center text-base font-bold transition-colors font-machina ${leftPanelDimmed ? "border border-gray-200 bg-white text-gray-400" : "bg-[#0e103a] text-white"}`}>
             Bring in an email or question below
           </div>
-          {/* Email intent pills */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-gray-400 font-medium shrink-0">Email intent</span>
-            {EMAIL_INTENTS.map((intent) => {
-              const isActive = activeIntents.has(intent);
-              return (
-                <button
-                  key={intent}
-                  onClick={() => toggleIntent(intent)}
-                  className={`rounded-full px-4 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-                    isActive
-                      ? "bg-[#0e103a] text-white"
-                      : "border border-gray-200 bg-white text-gray-400 hover:border-gray-300 hover:text-gray-500"
-                  }`}
-                >
-                  {intent}
-                </button>
-              );
-            })}
+          {/* Intent + Ticket selectors */}
+          <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+            <p className="mb-3 text-[11px] text-gray-400">Select intent and ticket status to adjust draft tone</p>
+            <div className="flex flex-col gap-2.5">
+
+              {/* Intent pills */}
+              <div className="flex items-center gap-3">
+                <span className="w-10 shrink-0 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Intent</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {(["info", "action", "offer", "other"] as const).map((intent) => {
+                    const tooltips = {
+                      info: "Seeking information, whether to make a purchase decision or assist with logistics",
+                      action: "Taking a specific action, like a ticket transfer or cancellation",
+                      offer: "Inbound vendors, partners, sponsors, volunteers, etc.",
+                      other: "All other email intents",
+                    };
+                    return (
+                      <div key={intent} className="relative group">
+                        <button
+                          onClick={() => setIntentCategory((prev) => prev === intent ? "" : intent)}
+                          className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize transition-colors cursor-pointer ${
+                            intentCategory === intent
+                              ? "bg-[#0e103a] text-white"
+                              : "bg-white border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                          }`}
+                        >
+                          {intent}
+                        </button>
+                        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity z-10 text-center">
+                          {tooltips[intent]}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Ticket status pills */}
+              <div className="flex items-center gap-3">
+                <span className="w-10 shrink-0 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Ticket</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {(["purchased", "not_purchased", "unknown"] as const).map((status) => {
+                    const label = status === "not_purchased" ? "Not purchased" : status.charAt(0).toUpperCase() + status.slice(1);
+                    return (
+                      <button
+                        key={status}
+                        onClick={() => setTicketStatus((prev) => prev === status ? "" : status)}
+                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors cursor-pointer ${
+                          ticketStatus === status
+                            ? "bg-[#0e103a] text-white"
+                            : "bg-white border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+            </div>
           </div>
 
           <div className={`flex-1 rounded-2xl p-[2px] ${showInputShimmer ? "purple-shimmer" : "bg-gray-200"}`}>

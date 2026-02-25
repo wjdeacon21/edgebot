@@ -127,10 +127,10 @@ export async function generateResponse(params: {
     .join("\n\n");
 
   const factsContext = params.structuredFacts
-    .map(
-      (f) =>
-        `[${f.category}] ${f.key}: ${f.value} (source: ${f.source_document || "unknown"}, page: ${f.page_number ?? "N/A"}, confidence: ${f.confidence})`
-    )
+    .map((f) => {
+      const base = `[${f.category}] ${f.key}: ${f.value}`;
+      return f.is_link ? `${base} [LINK]` : base;
+    })
     .join("\n");
 
   const conflictContext =
@@ -164,7 +164,7 @@ RULES:
 - If you are unsure, say so explicitly. Do not guess.
 - Structured facts override raw text chunks when they exist.
 - The SUGGESTED REPLY must be plain prose only — no bold (**), no bullet points (-), no numbered lists, no headers. Write in natural prose paragraphs as you would in a real email.
-- Before writing the reply, scan the STRUCTURED FACTS for every place name, venue, or resource that has an associated URL. Every time you mention one of these in the reply, you MUST write it as a Markdown link: [place name](url). Never write a place name as plain text if a URL for it exists in Structured Facts. Do not include raw URLs.
+- Any fact in STRUCTURED FACTS marked [LINK] has a URL as its value. When you mention that resource in the reply, you MUST format it as a Markdown link: [key](value). Never write a [LINK] resource as plain text. Only link resources that are genuinely relevant to this email — do not force irrelevant links in. Do not invent URLs.
 - Begin the SUGGESTED REPLY with a salutation. Infer the addressee's first name from the email if possible (e.g. "Hi Sarah,"). If the name is unclear, use "Hi there,".
 - End the SUGGESTED REPLY with a sign-off: "Best," on its own line, then a blank line, then "${params.senderName || "[Your name]"}" on the next line.${toneExamplesBlock}
 
@@ -176,7 +176,7 @@ Respond in EXACTLY this format:
 --- SUGGESTED REPLY ---
 [A deeply human reply to the participant, written by an insider at Edge with deep familiarity. Begin each message with "Thanks for reaching out!" Then rather than merely signalling warmth or excitement, you must express it through genuine helpfulness. First paragraph answers their question. No emojis, no speculation. NEVER include citations, source references, or document names — this text is sent directly to the participant. 
 Check the text for redundancy before sending. Be professional, but skew towards the formality level of the incoming email--casual in, casual out. Aim for naturalistic responses. Keep replies short, ideally one or two paragraphs unless more detail is needed.
-Before finalizing, re-scan every place name and venue you mentioned against the Structured Facts. If a URL exists for it, it must appear as a Markdown link — not plain text.]
+Before finalizing, re-scan for every [LINK] fact you mentioned. Each must appear as a Markdown link — not plain text.]
 
 --- IF UNSURE ---
 [Clarifying questions the staff member should consider, or "N/A"]`;

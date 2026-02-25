@@ -6,7 +6,7 @@ import { generateResponse } from "@/lib/claude";
 
 export async function POST(request: Request) {
   try {
-    const { rawEmail, intentCategory, senderName } = await request.json();
+    const { rawEmail, intentCategory, ticketStatus, senderName } = await request.json();
 
     if (!rawEmail || typeof rawEmail !== "string") {
       return NextResponse.json(
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     const supabase = createServiceClient();
     const [chunks, facts, toneExamplesResult] = await Promise.all([
       retrieveRelevantChunks(rawEmail),
-      retrieveStructuredFacts(rawEmail),
+      retrieveStructuredFacts(),
       supabase
         .from("tone_examples")
         .select("body")
@@ -40,6 +40,7 @@ export async function POST(request: Request) {
       conflictFlag: conflictResult.conflictFlag,
       conflicts: conflictResult.conflicts,
       intentCategory,
+      ticketStatus,
       senderName,
       toneExamples,
     });
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
         sources_used: sourcesUsed,
         status: "pending",
         ...(intentCategory ? { intent_category: intentCategory } : {}),
+        ...(ticketStatus ? { ticket_status: ticketStatus } : {}),
       })
       .select("id")
       .single();

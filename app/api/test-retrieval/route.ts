@@ -11,7 +11,7 @@ export async function POST(request: Request) {
 
     const [chunks, facts] = await Promise.all([
       retrieveRelevantChunks(query),
-      retrieveStructuredFacts(query),
+      retrieveStructuredFacts(),
     ]);
 
     return NextResponse.json({

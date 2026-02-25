@@ -27,6 +27,7 @@ export interface StructuredFact {
   confidence: "high" | "medium" | "low";
   last_verified: string;
   status: "active" | "deprecated";
+  is_link: boolean;
 }
 
 export interface EmailQuery {

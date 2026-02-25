@@ -39,7 +39,7 @@ export async function POST(
 
     const [chunks, facts] = await Promise.all([
       retrieveRelevantChunks(rawEmail),
-      retrieveStructuredFacts(rawEmail),
+      retrieveStructuredFacts(),
     ]);
 
     const conflictResult = await detectConflicts(chunks, facts);

@@ -21,9 +21,7 @@ const EMPTY_FORM = {
   category: CATEGORIES[0],
   key: "",
   value: "",
-  source_document: "",
-  page_number: "",
-  confidence: "high" as "high" | "medium" | "low",
+  is_link: false,
 };
 
 export default function StructuredFactsPage() {
@@ -71,9 +69,7 @@ export default function StructuredFactsPage() {
       category: fact.category,
       key: fact.key,
       value: fact.value,
-      source_document: fact.source_document || "",
-      page_number: fact.page_number?.toString() || "",
-      confidence: fact.confidence,
+      is_link: fact.is_link ?? false,
     });
     setEditingId(fact.id);
     setShowForm(true);
@@ -93,10 +89,7 @@ export default function StructuredFactsPage() {
       category: form.category,
       key: form.key.trim(),
       value: form.value.trim(),
-      source_document: form.source_document.trim() || null,
-      page_number: form.page_number ? parseInt(form.page_number) : null,
-      confidence: form.confidence,
-      last_verified: new Date().toISOString(),
+      is_link: form.is_link,
     };
 
     if (editingId) {
@@ -201,39 +194,15 @@ export default function StructuredFactsPage() {
                 className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#0e103a] focus:border-gray-500 focus:outline-none"
               />
             </div>
-            <div>
-              <label className="block text-sm text-gray-600">Source Document</label>
+            <label className="flex cursor-pointer items-center gap-3">
               <input
-                type="text"
-                value={form.source_document}
-                onChange={(e) => setForm({ ...form, source_document: e.target.value })}
-                placeholder="e.g. Edge City Master Guide v2"
-                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#0e103a] focus:border-gray-500 focus:outline-none"
+                type="checkbox"
+                checked={form.is_link}
+                onChange={(e) => setForm({ ...form, is_link: e.target.checked })}
+                className="h-4 w-4 rounded border-gray-300 accent-[#0e103a] cursor-pointer"
               />
-            </div>
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="block text-sm text-gray-600">Page Number</label>
-                <input
-                  type="number"
-                  value={form.page_number}
-                  onChange={(e) => setForm({ ...form, page_number: e.target.value })}
-                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#0e103a] focus:border-gray-500 focus:outline-none"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm text-gray-600">Confidence</label>
-                <select
-                  value={form.confidence}
-                  onChange={(e) => setForm({ ...form, confidence: e.target.value as "high" | "medium" | "low" })}
-                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#0e103a] focus:border-gray-500 focus:outline-none"
-                >
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
-              </div>
-            </div>
+              <span className="text-sm text-gray-600">Value is a link — Claude will format it as a hyperlink when mentioned</span>
+            </label>
             <div className="flex gap-3">
               <button
                 onClick={handleSave}
@@ -275,10 +244,7 @@ export default function StructuredFactsPage() {
                 <th className="pb-2 pr-4 font-medium">Category</th>
                 <th className="pb-2 pr-4 font-medium">Key</th>
                 <th className="pb-2 pr-4 font-medium">Value</th>
-                <th className="pb-2 pr-4 font-medium">Source</th>
-                <th className="pb-2 pr-4 font-medium">Page</th>
-                <th className="pb-2 pr-4 font-medium">Confidence</th>
-                <th className="pb-2 pr-4 font-medium">Verified</th>
+                <th className="pb-2 pr-4 font-medium">Link</th>
                 <th className="pb-2 pr-4 font-medium">Status</th>
                 {isAdmin && <th className="pb-2 font-medium">Actions</th>}
               </tr>
@@ -288,22 +254,11 @@ export default function StructuredFactsPage() {
                 <tr key={fact.id} className="border-b border-gray-100">
                   <td className="py-3 pr-4 text-gray-600">{fact.category}</td>
                   <td className="py-3 pr-4 text-[#0e103a] font-medium">{fact.key}</td>
-                  <td className="py-3 pr-4 text-[#0e103a]">{fact.value}</td>
-                  <td className="py-3 pr-4 text-gray-500">{fact.source_document || "—"}</td>
-                  <td className="py-3 pr-4 text-gray-500">{fact.page_number ?? "—"}</td>
+                  <td className="py-3 pr-4 text-[#0e103a] max-w-xs truncate">{fact.value}</td>
                   <td className="py-3 pr-4">
-                    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                      fact.confidence === "high"
-                        ? "bg-green-50 text-green-700"
-                        : fact.confidence === "medium"
-                        ? "bg-yellow-50 text-yellow-700"
-                        : "bg-red-50 text-red-700"
-                    }`}>
-                      {fact.confidence}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4 text-gray-500">
-                    {new Date(fact.last_verified).toLocaleDateString()}
+                    {fact.is_link && (
+                      <span className="inline-block rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-600">link</span>
+                    )}
                   </td>
                   <td className="py-3 pr-4">
                     <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${

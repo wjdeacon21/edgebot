@@ -6,8 +6,7 @@ import { useUserRole } from "@/lib/useUserRole";
 import { useState } from "react";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: "◻", minRole: "admin" as const },
-  { href: "/drafter", label: "Create Drafts", icon: "✉", minRole: "ops_reviewer" as const },
+{ href: "/drafter", label: "Create Drafts", icon: "✉", minRole: "ops_reviewer" as const },
   { href: "/review-drafts", label: "Review Drafts", icon: "📬", minRole: "ops_reviewer" as const },
   { href: "/sources", label: "Sources", icon: "📄", minRole: "admin" as const },
   { href: "/structured-facts", label: "Structured Facts", icon: "▤", minRole: "admin" as const },
