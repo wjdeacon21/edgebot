@@ -73,10 +73,8 @@ export default function ToneExamplesPage() {
               className="flex items-start justify-between rounded-md border border-gray-200 bg-white p-4"
             >
               <div className="min-w-0 flex-1 pr-4">
-                <p className="text-sm text-[#0e103a] leading-relaxed">
-                  {example.body.length > 150
-                    ? example.body.slice(0, 150) + "…"
-                    : example.body}
+                <p className="text-sm text-[#0e103a] leading-relaxed whitespace-pre-wrap">
+                  {example.body}
                 </p>
                 <p className="mt-1 text-xs text-gray-400">
                   {new Date(example.created_at).toLocaleDateString(undefined, {
