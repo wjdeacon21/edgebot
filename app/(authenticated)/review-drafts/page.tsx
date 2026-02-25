@@ -75,6 +75,7 @@ export default function ReviewDraftsPage() {
   const [ticketStatusOverrides, setTicketStatusOverrides] = useState<Record<string, string>>({});
   const [regenerating, setRegenerating] = useState<Record<string, boolean>>({});
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
+  const [markingAsSent, setMarkingAsSent] = useState<Record<string, boolean>>({});
   const [senderName, setSenderName] = useState<string>("");
 
   useEffect(() => {
@@ -160,6 +161,16 @@ export default function ReviewDraftsPage() {
     setDrafts((prev) => prev.filter((d) => d.id !== id));
   }
 
+  async function handleMarkAsSent(id: string) {
+    setMarkingAsSent((prev) => ({ ...prev, [id]: true }));
+    await fetch(`/api/email-queries/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "approved" }),
+    });
+    setDrafts((prev) => prev.filter((d) => d.id !== id));
+  }
+
   async function handleRegenerate(draft: EmailQuery) {
     if (regenerating[draft.id]) return;
 
@@ -204,7 +215,7 @@ export default function ReviewDraftsPage() {
     <div className="flex min-h-screen flex-col bg-gray-50 p-4 pt-14 lg:p-8">
       <h1 className="text-2xl font-semibold text-[#0e103a] font-machina">Review Drafts</h1>
       <p className="mt-1 text-sm text-gray-500">
-        Auto-generated replies from forwarded participant emails
+        Review and send auto-generated replies to participant emails
       </p>
 
       <div className="mt-6 flex flex-col gap-4">
@@ -359,13 +370,22 @@ export default function ReviewDraftsPage() {
 
               {/* Action row */}
               <div className="mt-3 flex justify-between gap-2">
-                <button
-                  onClick={() => handleDelete(draft.id)}
-                  disabled={deleting[draft.id]}
-                  className="rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-400 hover:border-red-200 hover:text-red-500 disabled:opacity-40 cursor-pointer transition-colors"
-                >
-                  {deleting[draft.id] ? "Deleting…" : "Delete"}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleDelete(draft.id)}
+                    disabled={deleting[draft.id]}
+                    className="rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-400 hover:border-red-200 hover:text-red-500 disabled:opacity-40 cursor-pointer transition-colors"
+                  >
+                    {deleting[draft.id] ? "Deleting…" : "Delete"}
+                  </button>
+                  <button
+                    onClick={() => handleMarkAsSent(draft.id)}
+                    disabled={markingAsSent[draft.id]}
+                    className="rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-400 hover:border-green-200 hover:text-green-600 disabled:opacity-40 cursor-pointer transition-colors"
+                  >
+                    {markingAsSent[draft.id] ? "Marking…" : "Mark as sent"}
+                  </button>
+                </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleRegenerate(draft)}
