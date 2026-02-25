@@ -71,7 +71,6 @@ export default function ReviewDraftsPage() {
   const [loading, setLoading] = useState(true);
   const [gmailLoading, setGmailLoading] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [expandedMessages, setExpandedMessages] = useState<Record<string, boolean>>({});
   const [intentOverrides, setIntentOverrides] = useState<Record<string, string>>({});
   const [ticketStatusOverrides, setTicketStatusOverrides] = useState<Record<string, string>>({});
   const [regenerating, setRegenerating] = useState<Record<string, boolean>>({});
@@ -257,106 +256,99 @@ export default function ReviewDraftsPage() {
                 <span className="shrink-0 text-xs text-gray-400">{timeAgo(draft.created_at)}</span>
               </div>
 
-              {/* Email snippet */}
-              <div className="mb-4 flex items-start gap-2">
-                <div className="mt-0.5 flex shrink-0 items-center gap-1">
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Message</span>
-                  {draft.raw_email.split('\n')[0].trim() !== draft.raw_email.trim() && (
-                    <button
-                      onClick={() => setExpandedMessages((prev) => ({ ...prev, [draft.id]: !prev[draft.id] }))}
-                      className="text-sm font-bold text-gray-400 hover:text-gray-600 cursor-pointer leading-none"
-                    >
-                      {expandedMessages[draft.id] ? "×" : "+"}
-                    </button>
-                  )}
-                </div>
-                <div className="w-0 flex-1 overflow-hidden">
-                  <p className="whitespace-pre-wrap break-all text-xs text-gray-500">
-                    {expandedMessages[draft.id] ? draft.raw_email : draft.raw_email.split('\n')[0].trim() + (draft.raw_email.split('\n')[0].trim() !== draft.raw_email.trim() ? "…" : "")}
-                  </p>
-                </div>
-              </div>
-
               {/* Intent + Ticket selectors */}
               <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-8">
 
-              {/* Intent selector */}
-              <div className="flex items-center gap-2">
-                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Intent</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {(["info", "action", "offer", "other"] as const).map((intent) => {
-                    const active = intentOverrides[draft.id] === intent;
-                    const tooltips = {
-                      info: "Seeking information, whether to make a purchase decision or assist with logistics",
-                      action: "Taking a specific action, like a ticket transfer or cancellation",
-                      offer: "Inbound vendors, partners, sponsors, volunteers, etc.",
-                      other: "All other email intents",
-                    };
-                    return (
-                      <div key={intent} className="relative group">
+                {/* Intent selector */}
+                <div className="flex items-center gap-2">
+                  <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Intent</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(["info", "action", "offer", "other"] as const).map((intent) => {
+                      const active = intentOverrides[draft.id] === intent;
+                      const tooltips = {
+                        info: "Seeking information, whether to make a purchase decision or assist with logistics",
+                        action: "Taking a specific action, like a ticket transfer or cancellation",
+                        offer: "Inbound vendors, partners, sponsors, volunteers, etc.",
+                        other: "All other email intents",
+                      };
+                      return (
+                        <div key={intent} className="relative group">
+                          <button
+                            onClick={() =>
+                              setIntentOverrides((prev) => ({ ...prev, [draft.id]: intent }))
+                            }
+                            className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors cursor-pointer ${
+                              active
+                                ? "bg-[#0e103a] text-white"
+                                : "border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-500"
+                            }`}
+                          >
+                            {intent}
+                          </button>
+                          <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity z-10 text-center">
+                            {tooltips[intent]}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Ticket status selector */}
+                <div className="flex items-center gap-2">
+                  <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Ticket</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(["purchased", "not_purchased", "unknown"] as const).map((status) => {
+                      const active = ticketStatusOverrides[draft.id] === status;
+                      const label = status === "not_purchased" ? "Not purchased" : status.charAt(0).toUpperCase() + status.slice(1);
+                      return (
                         <button
+                          key={status}
                           onClick={() =>
-                            setIntentOverrides((prev) => ({ ...prev, [draft.id]: intent }))
+                            setTicketStatusOverrides((prev) => ({ ...prev, [draft.id]: status }))
                           }
-                          className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors cursor-pointer ${
+                          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
                             active
                               ? "bg-[#0e103a] text-white"
                               : "border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-500"
                           }`}
                         >
-                          {intent}
+                          {label}
                         </button>
-                        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity z-10 text-center">
-                          {tooltips[intent]}
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-
-              {/* Ticket status selector */}
-              <div className="flex items-center gap-2">
-                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Ticket</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {(["purchased", "not_purchased", "unknown"] as const).map((status) => {
-                    const active = ticketStatusOverrides[draft.id] === status;
-                    const label = status === "not_purchased" ? "Not purchased" : status.charAt(0).toUpperCase() + status.slice(1);
-                    return (
-                      <button
-                        key={status}
-                        onClick={() =>
-                          setTicketStatusOverrides((prev) => ({ ...prev, [draft.id]: status }))
-                        }
-                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
-                          active
-                            ? "bg-[#0e103a] text-white"
-                            : "border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-500"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
 
               </div>{/* end intent + ticket row */}
 
-              {/* Editable reply */}
-              <div className="mb-2">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Reply</span>
-              </div>
-              {editedReplies[draft.id] !== undefined && (
-                <DraftEditor
-                  key={`${draft.id}-${contentVersions[draft.id] || 0}`}
-                  draftId={draft.id}
-                  initialContent={editedReplies[draft.id]}
-                  onContentChange={(id, html) =>
-                    setEditedReplies((prev) => ({ ...prev, [id]: html }))
-                  }
-                />
-              )}
+              {/* Two-column body */}
+              <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
+
+                {/* Left panel: received message */}
+                <div className="flex flex-col lg:w-2/5">
+                  <span className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Message</span>
+                  <div className="flex-1 overflow-y-auto rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 lg:max-h-96">
+                    <p className="whitespace-pre-wrap break-words text-xs text-gray-500">{draft.raw_email}</p>
+                  </div>
+                </div>
+
+                {/* Right panel: reply */}
+                <div className="flex flex-1 flex-col">
+                  <span className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Reply</span>
+                  {editedReplies[draft.id] !== undefined && (
+                    <DraftEditor
+                      key={`${draft.id}-${contentVersions[draft.id] || 0}`}
+                      draftId={draft.id}
+                      initialContent={editedReplies[draft.id]}
+                      onContentChange={(id, html) =>
+                        setEditedReplies((prev) => ({ ...prev, [id]: html }))
+                      }
+                    />
+                  )}
+                </div>
+
+              </div>{/* end two-column body */}
 
               {/* Error */}
               {errors[draft.id] && (
@@ -375,20 +367,20 @@ export default function ReviewDraftsPage() {
                   {deleting[draft.id] ? "Deleting…" : "Delete"}
                 </button>
                 <div className="flex gap-2">
-                <button
-                  onClick={() => handleRegenerate(draft)}
-                  disabled={regenerating[draft.id]}
-                  className="rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-800 disabled:opacity-40 cursor-pointer transition-colors"
-                >
-                  {regenerating[draft.id] ? "Regenerating…" : "Regenerate reply"}
-                </button>
-                <button
-                  onClick={() => handleOpenInGmail(draft)}
-                  disabled={gmailLoading[draft.id] || !(editedReplies[draft.id] || "").replace(/<[^>]*>/g, "").trim()}
-                  className="rounded-full bg-[#0e103a] px-5 py-2 text-sm font-medium text-white hover:bg-[#0a0c2e] disabled:opacity-50 cursor-pointer"
-                >
-                  {gmailLoading[draft.id] ? "Opening…" : "Open in Gmail"}
-                </button>
+                  <button
+                    onClick={() => handleRegenerate(draft)}
+                    disabled={regenerating[draft.id]}
+                    className="rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-800 disabled:opacity-40 cursor-pointer transition-colors"
+                  >
+                    {regenerating[draft.id] ? "Regenerating…" : "Regenerate reply"}
+                  </button>
+                  <button
+                    onClick={() => handleOpenInGmail(draft)}
+                    disabled={gmailLoading[draft.id] || !(editedReplies[draft.id] || "").replace(/<[^>]*>/g, "").trim()}
+                    className="rounded-full bg-[#0e103a] px-5 py-2 text-sm font-medium text-white hover:bg-[#0a0c2e] disabled:opacity-50 cursor-pointer"
+                  >
+                    {gmailLoading[draft.id] ? "Opening…" : "Open in Gmail"}
+                  </button>
                 </div>
               </div>
             </div>
