@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase";
 
 export async function POST(request: Request) {
   try {
-    const { body, subject } = await request.json();
+    const { body, subject, to } = await request.json();
 
     if (!body || typeof body !== "string") {
       return NextResponse.json(
@@ -52,13 +52,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // Build RFC 2822 email message (no To — user fills that in Gmail)
+    // Build RFC 2822 email message
+    const htmlBody = `<html><body style="font-family:sans-serif">${body}</body></html>`;
     const emailLines = [
-      "Content-Type: text/plain; charset=utf-8",
+      "Content-Type: text/html; charset=utf-8",
       "MIME-Version: 1.0",
+      ...(to ? [`To: ${to}`] : []),
       ...(subject ? [`Subject: ${subject}`] : []),
       "",
-      body,
+      htmlBody,
     ];
     const rawMessage = emailLines.join("\r\n");
 
@@ -106,6 +108,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       draftId: draft.id,
+      messageId: draft.message?.id,
     });
   } catch (err) {
     console.error("Gmail draft error:", err);

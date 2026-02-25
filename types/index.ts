@@ -48,7 +48,7 @@ export interface EmailQuery {
   source?: 'manual' | 'forwarded';
   subject?: string | null;
   from_address?: string | null;
-  intent_category?: "info" | "action" | "offer" | "feedback" | null;
+  intent_category?: "info" | "action" | "offer" | "other" | null;
   was_manually_overridden?: boolean;
   ticket_status?: "purchased" | "not_purchased" | "unknown" | null;
 }

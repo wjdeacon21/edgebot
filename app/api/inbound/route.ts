@@ -34,8 +34,17 @@ export async function POST(request: NextRequest) {
 
     const emailBody = stripQuotedReplies(rawBody);
 
-    // Run RAG + both classifications in parallel, then generate
-    const [chunks, facts, classification, ticketClassification] = await Promise.all([
+    // Magic subject prefix: store as tone example and short-circuit
+    const TONE_EXAMPLE_PREFIX = "tone:";
+    if (subject.toLowerCase().startsWith(TONE_EXAMPLE_PREFIX)) {
+      const supabase = createServiceClient();
+      await supabase.from("tone_examples").insert({ body: emailBody });
+      return NextResponse.json({ ok: true });
+    }
+
+    // Fetch tone examples alongside RAG + classifications
+    const supabase = createServiceClient();
+    const [chunks, facts, classification, ticketClassification, toneExamplesResult] = await Promise.all([
       retrieveRelevantChunks(emailBody),
       retrieveStructuredFacts(emailBody),
       classifyEmail(emailBody).catch((err) => {
@@ -46,7 +55,14 @@ export async function POST(request: NextRequest) {
         console.error("classifyTicketStatus failed:", err);
         return null;
       }),
+      supabase
+        .from("tone_examples")
+        .select("body")
+        .order("created_at", { ascending: false })
+        .limit(5),
     ]);
+
+    const toneExamples = toneExamplesResult.data?.map((r) => r.body) ?? [];
 
     const conflictResult = await detectConflicts(chunks, facts);
 
@@ -58,6 +74,7 @@ export async function POST(request: NextRequest) {
       conflicts: conflictResult.conflicts,
       intentCategory: classification?.intent,
       ticketStatus: ticketClassification?.ticket_status,
+      toneExamples,
     });
 
     const sourcesUsed = chunks.map((c) => ({
@@ -67,12 +84,9 @@ export async function POST(request: NextRequest) {
       snippet: c.text.slice(0, 150),
     }));
 
-    const supabase = createServiceClient();
-
     const { error: insertError } = await supabase.from("email_queries").insert({
       raw_email: emailBody,
       suggested_reply: response.suggestedReply,
-      confidence_score: response.confidence,
       conflict_flag: conflictResult.conflictFlag,
       sources_used: sourcesUsed,
       status: "pending",

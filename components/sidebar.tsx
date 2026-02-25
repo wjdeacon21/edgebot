@@ -12,6 +12,7 @@ const navItems = [
   { href: "/sources", label: "Sources", icon: "📄", minRole: "admin" as const },
   { href: "/structured-facts", label: "Structured Facts", icon: "▤", minRole: "admin" as const },
   { href: "/logs", label: "Logs", icon: "☰", minRole: "admin" as const },
+  { href: "/tone-examples", label: "Tone Examples", icon: "✍", minRole: "admin" as const },
   { href: "/admin", label: "Admin", icon: "⚙", minRole: "admin" as const },
 ];
 

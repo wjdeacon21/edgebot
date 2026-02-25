@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import TipTapLink from "@tiptap/extension-link";
+import { createClient } from "@/lib/supabase-browser";
 import { EmailQuery } from "@/types";
 
 function timeAgo(dateString: string): string {
@@ -14,9 +18,56 @@ function timeAgo(dateString: string): string {
   return `${days}d ago`;
 }
 
+function markdownLinksToHtml(text: string): string {
+  const withLinks = text.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    '<a href="$2">$1</a>'
+  );
+  return withLinks
+    .split(/\n\n+/)
+    .map((para) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
+    .join("");
+}
+
+function DraftEditor({
+  draftId,
+  initialContent,
+  onContentChange,
+}: {
+  draftId: string;
+  initialContent: string;
+  onContentChange: (id: string, html: string) => void;
+}) {
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions: [
+      StarterKit,
+      TipTapLink.configure({
+        openOnClick: true,
+        HTMLAttributes: {
+          target: "_blank",
+          rel: "noopener noreferrer",
+        },
+      }),
+    ],
+    content: initialContent,
+    onUpdate({ editor }) {
+      onContentChange(draftId, editor.getHTML());
+    },
+  });
+
+  return (
+    <EditorContent
+      editor={editor}
+      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-[#0e103a] focus-within:border-gray-300 [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[7rem] [&_.ProseMirror_a]:text-blue-600 [&_.ProseMirror_a]:underline [&_.ProseMirror_a]:cursor-pointer [&_.ProseMirror_p]:mb-2 [&_.ProseMirror_p:last-child]:mb-0"
+    />
+  );
+}
+
 export default function ReviewDraftsPage() {
   const [drafts, setDrafts] = useState<EmailQuery[]>([]);
   const [editedReplies, setEditedReplies] = useState<Record<string, string>>({});
+  const [contentVersions, setContentVersions] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [gmailLoading, setGmailLoading] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -24,6 +75,18 @@ export default function ReviewDraftsPage() {
   const [intentOverrides, setIntentOverrides] = useState<Record<string, string>>({});
   const [ticketStatusOverrides, setTicketStatusOverrides] = useState<Record<string, string>>({});
   const [regenerating, setRegenerating] = useState<Record<string, boolean>>({});
+  const [senderName, setSenderName] = useState<string>("");
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      const fullName =
+        user?.user_metadata?.full_name ||
+        user?.user_metadata?.name ||
+        "";
+      setSenderName(fullName.split(" ")[0]);
+    });
+  }, []);
 
   useEffect(() => {
     async function fetchDrafts() {
@@ -37,7 +100,7 @@ export default function ReviewDraftsPage() {
         const intents: Record<string, string> = {};
         const tickets: Record<string, string> = {};
         data.forEach((d) => {
-          replies[d.id] = d.suggested_reply || "";
+          replies[d.id] = markdownLinksToHtml(d.suggested_reply || "");
           if (d.intent_category) intents[d.id] = d.intent_category;
           if (d.ticket_status) tickets[d.id] = d.ticket_status;
         });
@@ -55,7 +118,7 @@ export default function ReviewDraftsPage() {
 
   async function handleOpenInGmail(draft: EmailQuery) {
     const reply = editedReplies[draft.id] || "";
-    if (!reply.trim() || gmailLoading[draft.id]) return;
+    if (!reply.replace(/<[^>]*>/g, "").trim() || gmailLoading[draft.id]) return;
 
     setGmailLoading((prev) => ({ ...prev, [draft.id]: true }));
     setErrors((prev) => ({ ...prev, [draft.id]: "" }));
@@ -64,7 +127,7 @@ export default function ReviewDraftsPage() {
       const res = await fetch("/api/gmail/draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: reply, subject: draft.subject }),
+        body: JSON.stringify({ body: reply, subject: draft.subject, to: draft.from_address }),
       });
 
       const data = await res.json();
@@ -77,7 +140,10 @@ export default function ReviewDraftsPage() {
         return;
       }
 
-      window.open("https://mail.google.com/mail/#drafts", "_blank");
+      const url = data.messageId
+        ? `https://mail.google.com/mail/#drafts/${data.messageId}`
+        : "https://mail.google.com/mail/#drafts";
+      window.open(url, "_blank");
     } catch {
       setErrors((prev) => ({
         ...prev,
@@ -101,6 +167,7 @@ export default function ReviewDraftsPage() {
         body: JSON.stringify({
           intent_category: intentOverrides[draft.id],
           ticket_status: ticketStatusOverrides[draft.id],
+          sender_name: senderName,
         }),
       });
 
@@ -114,7 +181,9 @@ export default function ReviewDraftsPage() {
         return;
       }
 
-      setEditedReplies((prev) => ({ ...prev, [draft.id]: data.suggestedReply }));
+      const html = markdownLinksToHtml(data.suggestedReply);
+      setEditedReplies((prev) => ({ ...prev, [draft.id]: html }));
+      setContentVersions((prev) => ({ ...prev, [draft.id]: (prev[draft.id] || 0) + 1 }));
     } catch {
       setErrors((prev) => ({
         ...prev,
@@ -166,7 +235,7 @@ export default function ReviewDraftsPage() {
         {/* Draft cards */}
         {!loading &&
           drafts.map((draft) => (
-            <div key={draft.id} className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-6">
+            <div key={draft.id} className="rounded-2xl border border-gray-200 bg-white p-6">
               {/* Card header */}
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div className="flex-1 space-y-2">
@@ -201,33 +270,46 @@ export default function ReviewDraftsPage() {
                 </div>
               </div>
 
+              {/* Intent + Ticket selectors */}
+              <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-8">
+
               {/* Intent selector */}
-              <div className="mb-4 flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Intent</span>
                 <div className="flex flex-wrap gap-1.5">
-                  {(["info", "action", "offer", "feedback"] as const).map((intent) => {
+                  {(["info", "action", "offer", "other"] as const).map((intent) => {
                     const active = intentOverrides[draft.id] === intent;
+                    const tooltips = {
+                      info: "Seeking information, whether to make a purchase decision or assist with logistics",
+                      action: "Taking a specific action, like a ticket transfer or cancellation",
+                      offer: "Inbound vendors, partners, sponsors, volunteers, etc.",
+                      other: "All other email intents",
+                    };
                     return (
-                      <button
-                        key={intent}
-                        onClick={() =>
-                          setIntentOverrides((prev) => ({ ...prev, [draft.id]: intent }))
-                        }
-                        className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors cursor-pointer ${
-                          active
-                            ? "bg-[#0e103a] text-white"
-                            : "border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-500"
-                        }`}
-                      >
-                        {intent}
-                      </button>
+                      <div key={intent} className="relative group">
+                        <button
+                          onClick={() =>
+                            setIntentOverrides((prev) => ({ ...prev, [draft.id]: intent }))
+                          }
+                          className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors cursor-pointer ${
+                            active
+                              ? "bg-[#0e103a] text-white"
+                              : "border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-500"
+                          }`}
+                        >
+                          {intent}
+                        </button>
+                        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity z-10 text-center">
+                          {tooltips[intent]}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
               </div>
 
               {/* Ticket status selector */}
-              <div className="mb-4 flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Ticket</span>
                 <div className="flex flex-wrap gap-1.5">
                   {(["purchased", "not_purchased", "unknown"] as const).map((status) => {
@@ -252,18 +334,22 @@ export default function ReviewDraftsPage() {
                 </div>
               </div>
 
+              </div>{/* end intent + ticket row */}
+
               {/* Editable reply */}
               <div className="mb-2">
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Reply</span>
               </div>
-              <textarea
-                value={editedReplies[draft.id] ?? ""}
-                onChange={(e) =>
-                  setEditedReplies((prev) => ({ ...prev, [draft.id]: e.target.value }))
-                }
-                className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-[#0e103a] focus:border-gray-300 focus:outline-none"
-                rows={6}
-              />
+              {editedReplies[draft.id] !== undefined && (
+                <DraftEditor
+                  key={`${draft.id}-${contentVersions[draft.id] || 0}`}
+                  draftId={draft.id}
+                  initialContent={editedReplies[draft.id]}
+                  onContentChange={(id, html) =>
+                    setEditedReplies((prev) => ({ ...prev, [id]: html }))
+                  }
+                />
+              )}
 
               {/* Error */}
               {errors[draft.id] && (
@@ -283,7 +369,7 @@ export default function ReviewDraftsPage() {
                 </button>
                 <button
                   onClick={() => handleOpenInGmail(draft)}
-                  disabled={gmailLoading[draft.id] || !editedReplies[draft.id]?.trim()}
+                  disabled={gmailLoading[draft.id] || !(editedReplies[draft.id] || "").replace(/<[^>]*>/g, "").trim()}
                   className="rounded-full bg-[#0e103a] px-5 py-2 text-sm font-medium text-white hover:bg-[#0a0c2e] disabled:opacity-50 cursor-pointer"
                 >
                   {gmailLoading[draft.id] ? "Sending…" : "Open in Gmail"}

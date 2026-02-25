@@ -1,21 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import TipTapLink from "@tiptap/extension-link";
 import { createClient } from "@/lib/supabase-browser";
 
 interface GenerateResult {
   id: string;
   suggestedReply: string;
   subjectLine: string;
-  confidence: string;
-  conflictFlag: boolean;
-  conflicts: string[];
-  sourcesUsed: {
-    source_id: string;
-    source_type: string;
-    page_number: number | null;
-    snippet: string;
-  }[];
+}
+
+function markdownLinksToHtml(text: string): string {
+  const withLinks = text.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    '<a href="$2">$1</a>'
+  );
+  return withLinks
+    .split(/\n\n+/)
+    .map((para) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
+    .join("");
 }
 
 export default function DrafterPage() {
@@ -27,8 +32,38 @@ export default function DrafterPage() {
   const [inputFocused, setInputFocused] = useState(false);
   const [gmailLoading, setGmailLoading] = useState(false);
   const [activeIntents, setActiveIntents] = useState<Set<string>>(new Set());
+  const [senderName, setSenderName] = useState<string>("");
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      const fullName =
+        user?.user_metadata?.full_name ||
+        user?.user_metadata?.name ||
+        "";
+      setSenderName(fullName.split(" ")[0]);
+    });
+  }, []);
 
   const EMAIL_INTENTS = ["Info", "Action", "Offer", "Feedback"] as const;
+
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions: [
+      StarterKit,
+      TipTapLink.configure({
+        openOnClick: true,
+        HTMLAttributes: {
+          target: "_blank",
+          rel: "noopener noreferrer",
+        },
+      }),
+    ],
+    content: "",
+    onUpdate({ editor }) {
+      setEditedReply(editor.getHTML());
+    },
+  });
 
   function toggleIntent(intent: string) {
     setActiveIntents((prev) => {
@@ -48,12 +83,13 @@ export default function DrafterPage() {
     setLoading(true);
     setResult(null);
     setError(null);
+    editor?.commands.setContent("");
 
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rawEmail, emailIntents: Array.from(activeIntents) }),
+        body: JSON.stringify({ rawEmail, emailIntents: Array.from(activeIntents), senderName }),
       });
 
       const data = await res.json();
@@ -63,8 +99,10 @@ export default function DrafterPage() {
         return;
       }
 
+      const html = markdownLinksToHtml(data.suggestedReply);
       setResult(data);
-      setEditedReply(data.suggestedReply);
+      setEditedReply(html);
+      editor?.commands.setContent(html);
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -94,6 +132,7 @@ export default function DrafterPage() {
       setRawEmail("");
       setResult(null);
       setEditedReply("");
+      editor?.commands.setContent("");
     }
   }
 
@@ -110,11 +149,12 @@ export default function DrafterPage() {
       setRawEmail("");
       setResult(null);
       setEditedReply("");
+      editor?.commands.setContent("");
     }
   }
 
   async function handleOpenInGmail() {
-    if (!editedReply.trim() || gmailLoading) return;
+    if (!editedReply.replace(/<[^>]*>/g, "").trim() || gmailLoading) return;
 
     setGmailLoading(true);
     setError(null);
@@ -275,12 +315,11 @@ export default function DrafterPage() {
               </div>
             )}
 
-            {/* Draft text */}
+            {/* Draft editor */}
             {!loading && result && (
-              <textarea
-                value={editedReply}
-                onChange={(e) => setEditedReply(e.target.value)}
-                className="h-full min-h-[400px] w-full resize-none rounded-2xl border-0 bg-transparent px-5 py-4 text-sm text-[#0e103a] focus:outline-none"
+              <EditorContent
+                editor={editor}
+                className="h-full min-h-[400px] px-5 py-4 text-sm text-[#0e103a] [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[380px] [&_.ProseMirror_a]:text-blue-600 [&_.ProseMirror_a]:underline [&_.ProseMirror_a]:cursor-pointer [&_.ProseMirror_p]:mb-2 [&_.ProseMirror_p:last-child]:mb-0"
               />
             )}
           </div>
@@ -305,7 +344,7 @@ export default function DrafterPage() {
                   </button>
                   <button
                     onClick={handleOpenInGmail}
-                    disabled={gmailLoading}
+                    disabled={gmailLoading || !editedReply.replace(/<[^>]*>/g, "").trim()}
                     className="flex-1 rounded-full py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
                   >
                     {gmailLoading ? "Sending..." : "Open in Gmail"}

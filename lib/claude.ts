@@ -29,9 +29,9 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
 const toneModifiers: Record<string, string> = {
   info: "The person needs information. Be warm, specific, and clear.",
-  action: "The person wants to complete a transaction or resolve a problem. Be efficient and direct. If something has gone wrong, lead with empathy.",
-  offer: "An inbound offer or pitch. Be professional and non-committal. Route to the appropriate contact if needed.",
-  feedback: "The person is sharing their experience. Be warm and appreciative.",
+  action: "The person wants to complete a specific action, like a ticket transfer or cancellation. Be efficient and direct. If something has gone wrong, lead with empathy.",
+  offer: "An inbound offer from a vendor, partner, sponsor, or volunteer. Be professional and non-committal. Route to the appropriate contact if needed.",
+  other: "This email doesn't fit a specific category. Be warm, helpful, and use good judgment.",
 };
 
 export async function classifyEmail(rawEmail: string): Promise<{
@@ -44,13 +44,13 @@ export async function classifyEmail(rawEmail: string): Promise<{
     system: `You classify inbound emails into one of four intent categories.
 
 Categories:
-- info: The person is asking for information or has a question.
-- action: The person wants to complete a transaction, make a change, or resolve a problem.
-- offer: An inbound offer, pitch, or partnership inquiry.
-- feedback: The person is sharing feedback, a review, or their experience.
+- info: The person is seeking information, whether to make a purchase decision or assist with logistics.
+- action: The person wants to take a specific action, like a ticket transfer or cancellation.
+- offer: An inbound vendor, partner, sponsor, volunteer, or similar external party.
+- other: All other email intents that don't clearly fit the above.
 
 Respond in EXACTLY this format:
-Intent: [info|action|offer|feedback]
+Intent: [info|action|offer|other]
 Reasoning: [One sentence explaining why]`,
     messages: [{ role: "user", content: `EMAIL:\n${rawEmail}` }],
   });
@@ -58,21 +58,21 @@ Reasoning: [One sentence explaining why]`,
   const text =
     response.content[0].type === "text" ? response.content[0].text : "";
 
-  const intentMatch = text.match(/Intent:\s*(info|action|offer|feedback)/i);
+  const intentMatch = text.match(/Intent:\s*(info|action|offer|other)/i);
   const reasoningMatch = text.match(/Reasoning:\s*(.+)/i);
 
   const intent = (intentMatch?.[1]?.toLowerCase() || "info") as
     | "info"
     | "action"
     | "offer"
-    | "feedback";
+    | "other";
   const reasoning = reasoningMatch?.[1]?.trim() || "";
 
   return { intent, reasoning };
 }
 
 const ticketStatusModifiers: Record<string, string> = {
-  purchased: "This person has purchased a ticket to Edge City. Welcome them warmly and be helpful and specific.",
+  purchased: "This person has purchased a ticket to Edge City. Welcome them warmly and be helpful and specific. Prioritize clarity and concision.",
   not_purchased: "This person has not yet purchased a ticket to Edge City. Be warm and informational. If it's natural to do so, gently highlight what makes Edge special — the community, the depth of programming, the experience of being there — but do not be salesy or pushy. Let the quality speak for itself.",
 };
 
@@ -113,11 +113,11 @@ export async function generateResponse(params: {
   conflicts?: string[];
   intentCategory?: string;
   ticketStatus?: string;
+  senderName?: string;
+  toneExamples?: string[];
 }): Promise<{
   suggestedReply: string;
   subjectLine: string;
-  confidence: string;
-  conflicts: string[];
 }> {
   const chunksContext = params.topChunks
     .map(
@@ -146,29 +146,36 @@ export async function generateResponse(params: {
     : null;
   const modifierPrefix = [toneModifier, ticketModifier].filter(Boolean).join(" ") ;
 
+  const toneExamplesBlock =
+    params.toneExamples && params.toneExamples.length > 0
+      ? `\n\nTONE EXAMPLES — past replies written in the voice and style we want. Match their naturalness:\n\n${params.toneExamples
+          .slice(0, 5)
+          .map((e) => `<example>\n${e}\n</example>`)
+          .join("\n\n")}`
+      : "";
+
   const systemPrompt = `${modifierPrefix ? `${modifierPrefix}\n\n` : ""}You are an internal operations employee for Edge City. Your job is to answer participant emails accurately.
 
 RULES:
 - You are a human being. Never say anything to suggest otherwise.
 - Accuracy over speed. Never fabricate information.
-- In the ANALYSIS section only: cite sources with document name and page number, and flag inconsistencies.
 - The SUGGESTED REPLY is sent directly to participants — it must NEVER contain citations, source references, page numbers, document names, or any indication that you consulted internal documents.
 - If you are unsure, say so explicitly. Do not guess.
 - Structured facts override raw text chunks when they exist.
 - Be warm and friendly, and also direct and professional. No emojis. No speculation.
-- The SUGGESTED REPLY must be plain text only — no markdown, no bold (**), no bullet points (-), no numbered lists, no headers. Write in natural prose paragraphs as you would in a real email.
+- The SUGGESTED REPLY must be plain prose only — no bold (**), no bullet points (-), no numbered lists, no headers. Write in natural prose paragraphs as you would in a real email.
+- When a relevant URL is available from structured facts, write it as a Markdown link: [display text](url). Do not include raw URLs.
+- Begin the SUGGESTED REPLY with a salutation. Infer the addressee's first name from the email if possible (e.g. "Hi Sarah,"). If the name is unclear, use "Hi there,".
+- End the SUGGESTED REPLY with a sign-off: "Best," on its own line, then a blank line, then "${params.senderName || "[Your name]"}" on the next line.${toneExamplesBlock}
 
 Respond in EXACTLY this format:
-
---- ANALYSIS ---
-Confidence: [High/Medium/Low]
-Conflicts: [List each conflict, or "None"]
 
 --- SUBJECT LINE ---
 [A concise, professional email subject line for the reply. E.g. "Re: Accommodation Details for Edge City"]
 
 --- SUGGESTED REPLY ---
-[A direct, warm reply to the participant. First paragraph answers their question. No emojis, no speculation. NEVER include citations, source references, or document names — this text is sent directly to the participant.]
+[A direct, warm reply to the participant. First paragraph answers their question. No emojis, no speculation. NEVER include citations, source references, or document names — this text is sent directly to the participant. 
+Check the text for redundancy before sending. Be professional, but skew towards the formality level of the incoming email--casual in, casual out. Aim for naturalistic responses. Keep replies short, ideally one or two paragraphs unless more detail is needed.]
 
 --- IF UNSURE ---
 [Clarifying questions the staff member should consider, or "N/A"]`;
@@ -195,9 +202,6 @@ Please analyze this email and provide your response in the required format.`;
     response.content[0].type === "text" ? response.content[0].text : "";
 
   // Parse the structured response
-  const analysisMatch = text.match(
-    /---\s*ANALYSIS\s*---\s*([\s\S]*?)(?=---\s*SUGGESTED REPLY\s*---|$)/i
-  );
   const subjectLineMatch = text.match(
     /---\s*SUBJECT LINE\s*---\s*([\s\S]*?)(?=---\s*SUGGESTED REPLY\s*---|$)/i
   );
@@ -205,33 +209,11 @@ Please analyze this email and provide your response in the required format.`;
     /---\s*SUGGESTED REPLY\s*---\s*([\s\S]*?)(?=---\s*IF UNSURE\s*---|$)/i
   );
 
-  const analysis = analysisMatch?.[1]?.trim() || text;
   const subjectLine = subjectLineMatch?.[1]?.trim() || "Re: Your Edge City Inquiry";
   const suggestedReply = suggestedReplyMatch?.[1]?.trim() || "";
-
-  // Extract confidence
-  const confidenceMatch = analysis.match(
-    /Confidence:\s*(High|Medium|Low)/i
-  );
-  const confidence = confidenceMatch?.[1]?.toLowerCase() || "medium";
-
-  // Extract conflicts
-  const conflictsMatch = analysis.match(
-    /Conflicts:\s*([\s\S]*?)(?=\n\n|$)/i
-  );
-  const conflictsText = conflictsMatch?.[1]?.trim() || "";
-  const conflicts =
-    conflictsText.toLowerCase() === "none" || !conflictsText
-      ? params.conflicts || []
-      : conflictsText
-          .split("\n")
-          .map((c) => c.replace(/^[-•]\s*/, "").trim())
-          .filter(Boolean);
 
   return {
     suggestedReply,
     subjectLine,
-    confidence,
-    conflicts,
   };
 }

@@ -6,7 +6,7 @@ import { generateResponse } from "@/lib/claude";
 
 export async function POST(request: Request) {
   try {
-    const { rawEmail, intentCategory } = await request.json();
+    const { rawEmail, intentCategory, senderName } = await request.json();
 
     if (!rawEmail || typeof rawEmail !== "string") {
       return NextResponse.json(
@@ -15,11 +15,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Retrieve relevant chunks and structured facts
-    const [chunks, facts] = await Promise.all([
+    // 1. Retrieve relevant chunks, structured facts, and tone examples
+    const supabase = createServiceClient();
+    const [chunks, facts, toneExamplesResult] = await Promise.all([
       retrieveRelevantChunks(rawEmail),
       retrieveStructuredFacts(rawEmail),
+      supabase
+        .from("tone_examples")
+        .select("body")
+        .order("created_at", { ascending: false })
+        .limit(5),
     ]);
+
+    const toneExamples = toneExamplesResult.data?.map((r) => r.body) ?? [];
 
     // 2. Detect conflicts
     const conflictResult = await detectConflicts(chunks, facts);
@@ -32,11 +40,11 @@ export async function POST(request: Request) {
       conflictFlag: conflictResult.conflictFlag,
       conflicts: conflictResult.conflicts,
       intentCategory,
+      senderName,
+      toneExamples,
     });
 
     // 4. Save to email_queries
-    const supabase = createServiceClient();
-
     const sourcesUsed = chunks.map((c) => ({
       source_id: c.source_id,
       source_type: c.source_type,
@@ -49,7 +57,6 @@ export async function POST(request: Request) {
       .insert({
         raw_email: rawEmail,
         suggested_reply: response.suggestedReply,
-        confidence_score: response.confidence,
         conflict_flag: conflictResult.conflictFlag,
         sources_used: sourcesUsed,
         status: "pending",
@@ -66,9 +73,8 @@ export async function POST(request: Request) {
       id: emailQuery?.id || null,
       suggestedReply: response.suggestedReply,
       subjectLine: response.subjectLine,
-      confidence: response.confidence,
       conflictFlag: conflictResult.conflictFlag,
-      conflicts: response.conflicts,
+      conflicts: conflictResult.conflicts,
       sourcesUsed,
     });
   } catch (error) {

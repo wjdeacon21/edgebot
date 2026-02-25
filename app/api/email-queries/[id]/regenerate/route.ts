@@ -10,16 +10,23 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { intent_category, ticket_status } = await request.json();
+    const { intent_category, ticket_status, sender_name } = await request.json();
 
     const supabase = createServiceClient();
 
-    // Fetch the existing record — use stored values as fallback if not provided
-    const { data: record, error: fetchError } = await supabase
-      .from("email_queries")
-      .select("raw_email, intent_category, ticket_status")
-      .eq("id", id)
-      .single();
+    // Fetch the existing record and tone examples in parallel
+    const [{ data: record, error: fetchError }, toneExamplesResult] = await Promise.all([
+      supabase
+        .from("email_queries")
+        .select("raw_email, intent_category, ticket_status")
+        .eq("id", id)
+        .single(),
+      supabase
+        .from("tone_examples")
+        .select("body")
+        .order("created_at", { ascending: false })
+        .limit(5),
+    ]);
 
     if (fetchError || !record) {
       return NextResponse.json({ error: "Record not found" }, { status: 404 });
@@ -28,6 +35,7 @@ export async function POST(
     const rawEmail: string = record.raw_email;
     const resolvedIntent = intent_category ?? record.intent_category ?? undefined;
     const resolvedTicketStatus = ticket_status ?? record.ticket_status ?? undefined;
+    const toneExamples = toneExamplesResult.data?.map((r) => r.body) ?? [];
 
     const [chunks, facts] = await Promise.all([
       retrieveRelevantChunks(rawEmail),
@@ -44,6 +52,8 @@ export async function POST(
       conflicts: conflictResult.conflicts,
       intentCategory: resolvedIntent,
       ticketStatus: resolvedTicketStatus,
+      senderName: sender_name,
+      toneExamples,
     });
 
     const updatePayload: Record<string, unknown> = {
