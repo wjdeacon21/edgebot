@@ -66,7 +66,7 @@ export default function LogsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-2xl font-semibold text-[#0e103a]">Logs</h1>
+      <h1 className="text-2xl font-semibold text-[#0e103a] font-machina">Logs</h1>
       <p className="mt-1 text-sm text-gray-500">Query history and audit trail</p>
 
       {/* Filters */}

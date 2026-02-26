@@ -78,7 +78,7 @@ export default function SourcesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-2xl font-semibold text-[#0e103a]">Raw Inputs</h1>
+      <h1 className="text-2xl font-semibold text-[#0e103a] font-machina">Raw Inputs</h1>
       <p className="mt-1 text-sm text-gray-500">Upload and manage PDF documents</p>
 
       {/* Upload Form (admin only) */}

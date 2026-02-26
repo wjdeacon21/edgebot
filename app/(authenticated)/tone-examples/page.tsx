@@ -45,7 +45,7 @@ export default function ToneExamplesPage() {
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
-        <h1 className="text-2xl font-semibold text-[#0e103a]">Access Denied</h1>
+        <h1 className="text-2xl font-semibold text-[#0e103a] font-machina">Access Denied</h1>
         <p className="mt-2 text-sm text-gray-500">
           You do not have permission to view this page.
         </p>
@@ -55,7 +55,7 @@ export default function ToneExamplesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-2xl font-semibold text-[#0e103a]">Tone Examples</h1>
+      <h1 className="text-2xl font-semibold text-[#0e103a] font-machina">Tone Examples</h1>
       <p className="mt-1 text-sm text-gray-500">
         Reply examples stored for tone reference. Forward an email with subject{" "}
         <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">Tone: anything</code> to add one.

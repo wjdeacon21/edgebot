@@ -87,7 +87,7 @@ export default function AdminPage() {
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
-        <h1 className="text-2xl font-semibold text-[#0e103a]">Access Denied</h1>
+        <h1 className="text-2xl font-semibold text-[#0e103a] font-machina">Access Denied</h1>
         <p className="mt-2 text-sm text-gray-500">
           You do not have permission to view this page.
         </p>
@@ -97,7 +97,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-2xl font-semibold text-[#0e103a]">Admin</h1>
+      <h1 className="text-2xl font-semibold text-[#0e103a] font-machina">Admin</h1>
       <p className="mt-1 text-sm text-gray-500">User management and system health</p>
 
       {loading ? (
