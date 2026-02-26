@@ -118,6 +118,7 @@ type GenerateParams = {
 };
 
 function buildPromptParts(params: GenerateParams): { systemPrompt: string; userMessage: string } {
+  const resolvedSenderName = params.senderName || process.env.SENDER_NAME || "";
   const chunksContext = params.topChunks
     .map(
       (c, i) =>
@@ -165,7 +166,7 @@ RULES:
 - The SUGGESTED REPLY must be plain prose only — no bold (**), no bullet points (-), no numbered lists, no headers. Write in natural prose paragraphs as you would in a real email.
 - Any fact in STRUCTURED FACTS marked [LINK] has a URL as its value. When you mention that resource in the reply, you MUST format it as a Markdown link: [key](value). Never write a [LINK] resource as plain text. Only link resources that are genuinely relevant to this email — do not force irrelevant links in. Do not invent URLs.
 - Begin the SUGGESTED REPLY with a salutation. Infer the addressee's first name from the email if possible (e.g. "Hi Sarah,"). If the name is unclear, use "Hi there,".
-- End the SUGGESTED REPLY with a sign-off: "Best," on its own line, then a blank line, then "${params.senderName || "[Your name]"}" on the next line.${toneExamplesBlock}
+- End the SUGGESTED REPLY with a sign-off: "Best," on its own line${resolvedSenderName ? `, then a blank line, then "${resolvedSenderName}" on the next line` : ""}.${toneExamplesBlock}
 
 Respond in EXACTLY this format:
 
