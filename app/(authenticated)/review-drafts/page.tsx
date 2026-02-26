@@ -7,6 +7,14 @@ import TipTapLink from "@tiptap/extension-link";
 import { createClient } from "@/lib/supabase-browser";
 import { EmailQuery } from "@/types";
 
+function reflowEmail(text: string): string {
+  return text
+    .replace(/\r\n/g, "\n")
+    .split(/\n{2,}/)
+    .map((para) => para.replace(/\n/g, " "))
+    .join("\n\n");
+}
+
 function timeAgo(dateString: string): string {
   const diff = Date.now() - new Date(dateString).getTime();
   const minutes = Math.floor(diff / 60000);
@@ -168,7 +176,8 @@ export default function ReviewDraftsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "approved" }),
     });
-    setDrafts((prev) => prev.filter((d) => d.id !== id));
+    setDrafts((prev) => prev.map((d) => d.id === id ? { ...d, status: "approved" } : d));
+    setMarkingAsSent((prev) => ({ ...prev, [id]: false }));
   }
 
   async function handleRegenerate(draft: EmailQuery) {
@@ -251,13 +260,18 @@ export default function ReviewDraftsPage() {
 
         {/* Draft cards */}
         {!loading &&
-          drafts.map((draft) => (
-            <div key={draft.id} className="rounded-2xl border border-gray-200 bg-white p-6">
+          drafts.map((draft) => {
+            const isSent = draft.status === "approved";
+            return (
+            <div key={draft.id} className={`rounded-2xl border bg-white p-6 transition-all ${isSent ? "border-gray-100 opacity-50 grayscale" : "border-gray-200"}`}>
               {/* Card header */}
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div className="flex-1 space-y-2">
-                  <div>
+                  <div className="flex items-center gap-2">
                     <p className="text-sm font-medium text-[#0e103a]">{draft.subject || "(No subject)"}</p>
+                    {isSent && (
+                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-green-700">Sent</span>
+                    )}
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-gray-400">From</span>
@@ -340,7 +354,7 @@ export default function ReviewDraftsPage() {
                 <div className="flex flex-col lg:w-2/5">
                   <span className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Message</span>
                   <div className="flex-1 overflow-y-auto rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 lg:max-h-96">
-                    <p className="whitespace-pre-wrap break-words text-xs text-gray-500">{draft.raw_email}</p>
+                    <p className="whitespace-pre-wrap break-words text-xs text-gray-500">{reflowEmail(draft.raw_email)}</p>
                   </div>
                 </div>
 
@@ -373,38 +387,39 @@ export default function ReviewDraftsPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleDelete(draft.id)}
-                    disabled={deleting[draft.id]}
-                    className="rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-400 hover:border-red-200 hover:text-red-500 disabled:opacity-40 cursor-pointer transition-colors"
+                    disabled={deleting[draft.id] || isSent}
+                    className="rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-400 hover:border-red-200 hover:text-red-500 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   >
                     {deleting[draft.id] ? "Deleting…" : "Delete"}
                   </button>
                   <button
                     onClick={() => handleMarkAsSent(draft.id)}
-                    disabled={markingAsSent[draft.id]}
-                    className="rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-400 hover:border-green-200 hover:text-green-600 disabled:opacity-40 cursor-pointer transition-colors"
+                    disabled={markingAsSent[draft.id] || isSent}
+                    className="rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-400 hover:border-green-200 hover:text-green-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   >
-                    {markingAsSent[draft.id] ? "Marking…" : "Mark as sent"}
+                    {isSent ? "Sent" : markingAsSent[draft.id] ? "Marking…" : "Mark as sent"}
                   </button>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleRegenerate(draft)}
-                    disabled={regenerating[draft.id]}
-                    className="rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-800 disabled:opacity-40 cursor-pointer transition-colors"
+                    disabled={regenerating[draft.id] || isSent}
+                    className="rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   >
                     {regenerating[draft.id] ? "Regenerating…" : "Regenerate reply"}
                   </button>
                   <button
                     onClick={() => handleOpenInGmail(draft)}
-                    disabled={gmailLoading[draft.id] || !(editedReplies[draft.id] || "").replace(/<[^>]*>/g, "").trim()}
-                    className="rounded-full bg-[#0e103a] px-5 py-2 text-sm font-medium text-white hover:bg-[#0a0c2e] disabled:opacity-50 cursor-pointer"
+                    disabled={gmailLoading[draft.id] || isSent || !(editedReplies[draft.id] || "").replace(/<[^>]*>/g, "").trim()}
+                    className="rounded-full bg-[#0e103a] px-5 py-2 text-sm font-medium text-white hover:bg-[#0a0c2e] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {gmailLoading[draft.id] ? "Opening…" : "Open in Gmail"}
                   </button>
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
       </div>
     </div>
   );
