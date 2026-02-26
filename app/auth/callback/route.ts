@@ -58,5 +58,5 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login?error=not_allowed`);
   }
 
-  return NextResponse.redirect(`${origin}/drafter`);
+  return NextResponse.redirect(`${origin}/review-drafts`);
 }
