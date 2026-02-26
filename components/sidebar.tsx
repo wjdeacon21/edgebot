@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useUserRole } from "@/lib/useUserRole";
 import { useState } from "react";
+import { createClient } from "@/lib/supabase-browser";
 
 const navItems = [
 { href: "/review-drafts", label: "Review Drafts", icon: "📬", minRole: "ops_reviewer" as const },
@@ -17,8 +18,15 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { isAdmin } = useUserRole();
   const [open, setOpen] = useState(false);
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+  }
 
   return (
     <>
@@ -84,6 +92,15 @@ export function Sidebar() {
               );
             })}
         </nav>
+        <div className="px-3 pb-4">
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-400 hover:bg-gray-50 hover:text-gray-600 cursor-pointer"
+          >
+            <span className="text-base w-5 text-center">↩</span>
+            Log out
+          </button>
+        </div>
       </aside>
     </>
   );
