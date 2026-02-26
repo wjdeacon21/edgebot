@@ -212,10 +212,10 @@ export default function DrafterPage() {
         return;
       }
 
-      window.open(
-        `https://mail.google.com/mail/#drafts`,
-        "_blank"
-      );
+      const url = data.draftId
+        ? `https://mail.google.com/mail/#drafts/r${data.draftId}`
+        : "https://mail.google.com/mail/#drafts";
+      window.open(url, "_blank");
     } catch {
       setError("Failed to connect to Gmail. Please try again.");
     } finally {

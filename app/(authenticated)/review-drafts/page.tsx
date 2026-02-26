@@ -149,8 +149,8 @@ export default function ReviewDraftsPage() {
         return;
       }
 
-      const url = data.messageId
-        ? `https://mail.google.com/mail/#drafts/${data.messageId}`
+      const url = data.draftId
+        ? `https://mail.google.com/mail/#drafts/r${data.draftId}`
         : "https://mail.google.com/mail/#drafts";
       window.open(url, "_blank");
     } catch {
