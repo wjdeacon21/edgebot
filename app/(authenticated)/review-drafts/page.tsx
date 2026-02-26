@@ -85,6 +85,8 @@ export default function ReviewDraftsPage() {
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
   const [markingAsSent, setMarkingAsSent] = useState<Record<string, boolean>>({});
   const [senderName, setSenderName] = useState<string>("");
+  const [filterIntent, setFilterIntent] = useState<string>("all");
+  const [filterTicket, setFilterTicket] = useState<string>("all");
 
   useEffect(() => {
     const supabase = createClient();
@@ -220,12 +222,86 @@ export default function ReviewDraftsPage() {
     }
   }
 
+  const intentOptions = ["all", "info", "action", "offer", "other"] as const;
+  const ticketOptions = [
+    { value: "all", label: "All" },
+    { value: "purchased", label: "Purchased" },
+    { value: "not_purchased", label: "Not purchased" },
+    { value: "unknown", label: "Unknown" },
+  ] as const;
+
+  const visibleDrafts = drafts.filter((d) => {
+    const intent = intentOverrides[d.id] || d.intent_category || "";
+    const ticket = ticketStatusOverrides[d.id] || d.ticket_status || "";
+    if (filterIntent !== "all" && intent !== filterIntent) return false;
+    if (filterTicket !== "all" && ticket !== filterTicket) return false;
+    return true;
+  });
+
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 p-4 pt-14 lg:p-8">
       <h1 className="text-2xl font-semibold text-[#0e103a] font-machina">Review Drafts</h1>
       <p className="mt-1 text-sm text-gray-500">
         Review and send auto-generated replies to participant emails
       </p>
+
+      {/* Filter bar */}
+      {!loading && drafts.length > 0 && (
+        <div className="mt-5 flex flex-wrap items-center gap-6">
+          {/* Intent filter */}
+          <div className="flex items-center gap-2">
+            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Intent</span>
+            <div className="flex flex-wrap gap-1.5">
+              {intentOptions.map((intent) => (
+                <button
+                  key={intent}
+                  onClick={() => setFilterIntent(intent)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors cursor-pointer ${
+                    filterIntent === intent
+                      ? "bg-[#0e103a] text-white"
+                      : "border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-500"
+                  }`}
+                >
+                  {intent === "all" ? "All" : intent}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Ticket filter */}
+          <div className="flex items-center gap-2">
+            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Ticket</span>
+            <div className="flex flex-wrap gap-1.5">
+              {ticketOptions.map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => setFilterTicket(value)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
+                    filterTicket === value
+                      ? "bg-[#0e103a] text-white"
+                      : "border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-500"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Active filter count */}
+          {(filterIntent !== "all" || filterTicket !== "all") && (
+            <span className="text-xs text-gray-400">
+              {visibleDrafts.length} of {drafts.length} shown
+              <button
+                onClick={() => { setFilterIntent("all"); setFilterTicket("all"); }}
+                className="ml-2 text-gray-400 underline hover:text-gray-600 cursor-pointer"
+              >
+                Clear
+              </button>
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="mt-6 flex flex-col gap-4">
         {/* Loading skeleton */}
@@ -258,9 +334,22 @@ export default function ReviewDraftsPage() {
           </div>
         )}
 
+        {/* No results after filtering */}
+        {!loading && drafts.length > 0 && visibleDrafts.length === 0 && (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white px-8 py-16 text-center">
+            <p className="text-sm font-medium text-[#0e103a]">No drafts match these filters</p>
+            <button
+              onClick={() => { setFilterIntent("all"); setFilterTicket("all"); }}
+              className="mt-2 text-xs text-gray-400 underline hover:text-gray-600 cursor-pointer"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
+
         {/* Draft cards */}
         {!loading &&
-          drafts.map((draft) => {
+          visibleDrafts.map((draft) => {
             const isSent = draft.status === "approved";
             return (
             <div key={draft.id} className={`rounded-2xl border bg-white p-6 transition-all ${isSent ? "border-gray-100 opacity-50 grayscale" : "border-gray-200"}`}>
