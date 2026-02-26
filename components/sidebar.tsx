@@ -10,8 +10,8 @@ const navItems = [
   { href: "/drafter", label: "Create Drafts", icon: "✏️", minRole: "ops_reviewer" as const },
   { href: "/sources", label: "Raw Inputs", icon: "📄", minRole: "admin" as const },
   { href: "/structured-facts", label: "Structured Inputs", icon: "🗂️", minRole: "admin" as const },
-  { href: "/logs", label: "Logs", icon: "📋", minRole: "admin" as const },
   { href: "/tone-examples", label: "Tone Examples", icon: "✍️", minRole: "admin" as const },
+  { href: "/logs", label: "Logs", icon: "📋", minRole: "admin" as const },
   { href: "/admin", label: "Admin", icon: "⚙️", minRole: "admin" as const },
 ];
 
