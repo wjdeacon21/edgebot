@@ -1,10 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { isEmailAllowed } from "@/lib/allowlist";
 import { createServiceClient } from "@/lib/supabase";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
 
@@ -12,18 +11,20 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login?error=no_code`);
   }
 
-  const cookieStore = await cookies();
+  // Create the redirect response upfront so cookies are set directly on it.
+  const supabaseResponse = NextResponse.redirect(`${origin}/review-drafts`);
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll();
+          return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, options)
           );
         },
       },
@@ -32,12 +33,17 @@ export async function GET(request: Request) {
 
   const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code);
 
-  if (error) {
+  if (error || !session) {
     return NextResponse.redirect(`${origin}/login?error=auth_failed`);
   }
 
+  // Check allowlist before committing the session
+  if (!session.user.email || !isEmailAllowed(session.user.email)) {
+    return NextResponse.redirect(`${origin}/login?error=not_allowed`);
+  }
+
   // Store provider token for Gmail API access
-  if (session?.provider_token) {
+  if (session.provider_token) {
     const serviceClient = createServiceClient();
     await serviceClient.from("provider_tokens").upsert({
       user_id: session.user.id,
@@ -48,15 +54,6 @@ export async function GET(request: Request) {
     }, { onConflict: "user_id" });
   }
 
-  // Check allowlist
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user?.email || !isEmailAllowed(user.email)) {
-    await supabase.auth.signOut();
-    return NextResponse.redirect(`${origin}/login?error=not_allowed`);
-  }
-
-  return NextResponse.redirect(`${origin}/review-drafts`);
+  // Return the response with session cookies already attached
+  return supabaseResponse;
 }
