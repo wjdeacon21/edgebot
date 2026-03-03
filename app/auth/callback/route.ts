@@ -42,9 +42,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=not_allowed`);
   }
 
+  const serviceClient = createServiceClient();
+
   // Store provider token for Gmail API access
   if (session.provider_token) {
-    const serviceClient = createServiceClient();
     await serviceClient.from("provider_tokens").upsert({
       user_id: session.user.id,
       access_token: session.provider_token,
@@ -53,6 +54,13 @@ export async function GET(request: NextRequest) {
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id" });
   }
+
+  // Ensure user has a role row (preserves existing role, defaults to ops_reviewer)
+  await serviceClient.from("user_roles").upsert({
+    user_id: session.user.id,
+    email: session.user.email,
+    role: "ops_reviewer",
+  }, { onConflict: "user_id", ignoreDuplicates: true });
 
   // Return the response with session cookies already attached
   return supabaseResponse;
