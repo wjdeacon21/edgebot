@@ -243,7 +243,7 @@ export default function ReviewDraftsPage() {
       <h1 className="text-2xl font-semibold text-[#0e103a] font-machina">Review Drafts</h1>
       <p className="mt-1 text-sm text-gray-500">
         Review and send auto-generated replies to any emails received at{" "}
-        <a href="mailto:edgecityops@watsondeacon.com" className="text-blue-600 hover:underline">edgecityops@watsondeacon.com</a> emails
+        <a href="mailto:edgecityops@watsondeacon.com" className="text-blue-600 hover:underline">edgecityops@watsondeacon.com</a>
       </p>
 
       {/* Filter bar */}
