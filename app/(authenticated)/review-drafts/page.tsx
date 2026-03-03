@@ -242,7 +242,8 @@ export default function ReviewDraftsPage() {
     <div className="flex min-h-screen flex-col bg-gray-50 p-4 pt-14 lg:p-8">
       <h1 className="text-2xl font-semibold text-[#0e103a] font-machina">Review Drafts</h1>
       <p className="mt-1 text-sm text-gray-500">
-        Review and send auto-generated replies to participant emails
+        Review and send auto-generated replies to any emails received at{" "}
+        <a href="mailto:edgecityops@watsondeacon.com" className="text-blue-600 hover:underline">edgecityops@watsondeacon.com</a> emails
       </p>
 
       {/* Filter bar */}
@@ -329,7 +330,8 @@ export default function ReviewDraftsPage() {
             <span className="text-4xl">📬</span>
             <p className="mt-4 text-sm font-medium text-[#0e103a]">No forwarded emails yet</p>
             <p className="mt-1 text-sm text-gray-500">
-              Forward any email to edgecityops@watsondeacon.com, then check back here to review an automatically generated response.
+              Forward any email to{" "}
+              <a href="mailto:edgecityops@watsondeacon.com" className="text-blue-600 hover:underline">edgecityops@watsondeacon.com</a>, then check back here to review an automatically generated response.
             </p>
           </div>
         )}
@@ -472,19 +474,19 @@ export default function ReviewDraftsPage() {
               )}
 
               {/* Action row */}
-              <div className="mt-3 flex justify-between gap-2">
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-between">
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleDelete(draft.id)}
                     disabled={deleting[draft.id] || isSent}
-                    className="rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-400 hover:border-red-200 hover:text-red-500 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    className="flex-1 sm:flex-none rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-400 hover:border-red-200 hover:text-red-500 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   >
                     {deleting[draft.id] ? "Deleting…" : "Delete"}
                   </button>
                   <button
                     onClick={() => handleMarkAsSent(draft.id)}
                     disabled={markingAsSent[draft.id] || isSent}
-                    className="rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-400 hover:border-green-200 hover:text-green-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    className="flex-1 sm:flex-none rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-400 hover:border-green-200 hover:text-green-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   >
                     {isSent ? "Sent" : markingAsSent[draft.id] ? "Marking…" : "Mark as sent"}
                   </button>
@@ -493,14 +495,14 @@ export default function ReviewDraftsPage() {
                   <button
                     onClick={() => handleRegenerate(draft)}
                     disabled={regenerating[draft.id] || isSent}
-                    className="rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    className="flex-1 sm:flex-none rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   >
                     {regenerating[draft.id] ? "Regenerating…" : "Regenerate reply"}
                   </button>
                   <button
                     onClick={() => handleOpenInGmail(draft)}
                     disabled={gmailLoading[draft.id] || isSent || !(editedReplies[draft.id] || "").replace(/<[^>]*>/g, "").trim()}
-                    className="rounded-full bg-[#0e103a] px-5 py-2 text-sm font-medium text-white hover:bg-[#0a0c2e] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    className="flex-1 sm:flex-none rounded-full bg-[#0e103a] px-5 py-2 text-sm font-medium text-white hover:bg-[#0a0c2e] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {gmailLoading[draft.id] ? "Opening…" : "Open in Gmail"}
                   </button>
